@@ -1,72 +1,113 @@
-# AGT - AI Agent Tool
+# AGT Project Guidelines
 
-Command line AI agent tool written in Elixir for chatting with Google Gemini.
-
-## Quick Start
-
-```bash
-# Set API key
-export GEMINI_API_KEY="your_api_key_here"
-
-# Install dependencies (may need erlang-dev package)
-mix deps.get
-
-# Build executable
-mix escript.build
-
-# Run interactive REPL
-./agt
-
-# Show help
-./agt --help
-```
+## Project Overview
+AGT (AI Agent Tool) is an Elixir-based AI agent framework that provides a REPL interface for interacting with Google's Gemini API. The project creates conversational AI agents with persistent conversation storage.
 
 ## Project Structure
-
 ```
-lib/
-├── agt.ex                 # Main module (unused)
-├── agt/
-│   ├── cli.ex            # Command line interface and argument parsing
-│   ├── config.ex         # Configuration management (API keys)
-│   ├── gemini_client.ex  # Google Gemini API client
-│   └── repl.ex           # Interactive REPL loop
+agt/
+├── lib/agt/              # Core application modules
+│   ├── agent.ex         # Main Agent GenServer
+│   ├── agent_supervisor.ex  # Agent supervision
+│   ├── application.ex   # OTP Application
+│   ├── cli.ex          # Command line interface  
+│   ├── config.ex       # Configuration management
+│   ├── conversations.ex # Conversation persistence
+│   ├── gemini_client.ex # Google Gemini API client
+│   ├── llm.ex          # LLM message structures
+│   ├── operator.ex     # User message structures
+│   └── repl.ex         # Interactive REPL
+├── test/               # Test files
+├── conversations/      # Persistent conversation storage
+├── bin/up             # Docker development script
+└── mix.exs           # Project configuration
 ```
 
 ## Key Commands
 
-- **Build**: `mix escript.build`
-- **Dependencies**: `mix deps.get`
-- **Test**: `mix test`
-- **Format**: `mix format`
+### Development
+- `mix deps.get` - Install dependencies
+- `mix compile` - Compile the project
+- `mix format` - Format code using Elixir formatter
+- `mix test` - Run tests
+- `mix escript.build` - Build executable
+- `./agt` - Run the built executable
 
-## Configuration
+### Running the Application
+- `mix run --no-halt` - Start the application
+- `agt` - Start REPL (requires GEMINI_API_KEY environment variable)
+- `agt --help` - Show help
+- `agt --version` - Show version
 
-- **GEMINI_API_KEY**: Required environment variable for Google Gemini API access
-- **Model**: Uses `gemini-2.5-pro-preview-06-05`
-- **Timeout**: 30 seconds for API requests
+## Code Style & Conventions
+
+### Elixir Style
+- Follow standard Elixir conventions
+- Use `mix format` for consistent formatting
+- Module documentation with `@moduledoc`
+- Function documentation with `@doc` for public functions
+- Use `alias` for module references
+- Pattern matching for control flow
+
+### Architecture Patterns
+- **OTP Applications**: Main application uses Application behavior
+- **GenServers**: Agents are implemented as GenServers for state management
+- **Supervisors**: Agent supervision for fault tolerance
+- **Message Passing**: Communication via GenServer calls/casts
+- **Data Structures**: Separate message structs for different roles (Operator, LLM)
+
+### Module Organization
+- Modules are organized under `Agt` namespace
+- Each module has a single responsibility
+- Configuration isolated in `Agt.Config`
+- API clients separated (e.g., `Agt.GeminiClient`)
 
 ## Dependencies
+- **req** (~> 0.4.0) - HTTP client for API calls
+- **jason** (~> 1.4) - JSON encoding/decoding
 
-- **req**: HTTP client for API requests
-- **jason**: JSON encoding/decoding
+## Key Design Patterns
 
-## REPL Commands
+### Agent Lifecycle
+1. Agent started via `Agt.AgentSupervisor.start_agent()`
+2. Conversations persisted to filesystem in `conversations/` directory
+3. Each message timestamped and stored as JSON
+4. Stateful conversation maintained in GenServer state
 
-- `exit`, `quit`, `q`: Exit the REPL
-- Empty input: Ignored, continues loop
-- Any other text: Sent to Gemini API
+### Message Flow
+1. User input → `Operator.Message`
+2. Stored to conversation
+3. Sent to Gemini API via `GeminiClient`
+4. Response → `LLM.Message`
+5. Stored to conversation
+6. Returned to user
 
-## Architecture
+### Error Handling
+- Config validation for API keys
+- HTTP request timeout handling
+- Graceful API error responses
+- File system error handling for conversation storage
 
-- **CLI module**: Entry point, handles arguments
-- **Config module**: Environment variable management
-- **GeminiClient module**: API integration with error handling
-- **REPL module**: Interactive loop with user I/O
+## Testing
+- Use ExUnit for testing
+- Doctests enabled for modules
+- Run tests with `mix test`
+- Current test coverage is minimal (placeholder tests)
 
-## Notes
+## Docker Development
+- Development environment containerized
+- Hex packages cached in named volume
+- Source code mounted for live development
+- Environment variables passed through
 
-- Uses escript for standalone executable
-- Stateless request/response model
-- Basic error handling for API failures
-- Simple synchronous operation
+## Build & Distribution
+- Escript enabled for CLI distribution
+- Main module: `Agt.CLI`
+- Executable built with `mix escript.build`
+
+## Future Considerations
+- Add comprehensive test coverage
+- Implement conversation loading/resumption
+- Add support for other LLM providers
+- Enhance error handling and logging
+- Add configuration file support
