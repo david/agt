@@ -31,9 +31,7 @@ defmodule Agt.Conversations do
       :ok ->
         :ok
 
-      {:error_exists, error} ->
-        IO.puts(error)
-
+      {:error, :eexist} ->
         write_message(iodata, conversation_id, timestamp, retry_number + 1)
     end
   end
@@ -42,7 +40,7 @@ defmodule Agt.Conversations do
     path = Path.join([@path, conversation_id, "#{message_id}.json"])
 
     if File.exists?(path) do
-      {:error_exists, "Message file exists: #{path}"}
+      {:error, :eexist}
     else
       File.write(path, message)
     end
