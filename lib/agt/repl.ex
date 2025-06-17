@@ -3,14 +3,18 @@ defmodule Agt.REPL do
   Interactive REPL for chatting with the AI
   """
 
-  alias Agt.{Config, Conversation}
+  alias Agt.Agent
+  alias Agt.AgentSupervisor
+  alias Agt.Config
 
   @prompt " "
 
   def start do
     case Config.get_api_key() do
       {:ok, _api_key} ->
-        loop()
+        {:ok, agent} = AgentSupervisor.start_agent()
+
+        loop(agent)
 
       {:error, error} ->
         IO.puts("Error: #{error}")
@@ -19,10 +23,10 @@ defmodule Agt.REPL do
     end
   end
 
-  defp loop do
+  defp loop(agent) do
     show_prompt()
 
-    get_input() |> handle_input()
+    get_input() |> handle_input(agent)
   end
 
   defp show_prompt do
@@ -35,17 +39,17 @@ defmodule Agt.REPL do
     |> String.trim()
   end
 
-  defp handle_input(""), do: loop()
+  defp handle_input("", agent), do: loop(agent)
 
-  defp handle_input(message) do
+  defp handle_input(message, agent) do
     IO.puts("")
     IO.puts("AI: ...")
     IO.puts("")
 
-    {:ok, response} = Conversation.prompt(message)
+    {:ok, response} = Agent.prompt(agent, message)
     IO.puts("AI: #{response}")
     IO.puts("")
 
-    loop()
+    loop(agent)
   end
 end
