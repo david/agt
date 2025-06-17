@@ -6,6 +6,7 @@ defmodule Agt.GeminiClient do
   alias Agt.Config
   alias Agt.LLM
   alias Agt.Operator
+  alias Agt.Tools
 
   @base_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-06-05:generateContent"
 
@@ -17,7 +18,10 @@ defmodule Agt.GeminiClient do
     ]
 
     body = %{
-      contents: Enum.map(conversation, &make_turn/1)
+      contents: Enum.map(conversation, &make_turn/1),
+      tools: %{
+        functionDeclarations: Tools.list() |> Enum.map(& &1.meta())
+      }
     }
 
     url = "#{@base_url}?key=#{api_key}"
@@ -36,11 +40,36 @@ defmodule Agt.GeminiClient do
 
   defp make_turn(%Operator.Message{body: body}), do: %{role: "user", parts: %{text: body}}
   defp make_turn(%LLM.Message{body: body}), do: %{role: "model", parts: %{text: body}}
+  defp make_turn(%LLM.FunctionCall{}), do: %{role: "model", parts: %{text: ""}}
+
+  defp make_turn(%Operator.FunctionResponse{name: name, result: result}),
+    do: %{role: "model", parts: %{functionResponse: %{name: name, response: %{result: result}}}}
 
   defp parse_response(response) do
     case response do
       %{"candidates" => [%{"content" => %{"parts" => [%{"text" => text} | _]}} | _]} ->
         {:ok, %LLM.Message{body: text}}
+
+      %{
+        "candidates" => [
+          %{
+            "content" => %{
+              "parts" => [%{"functionCall" => %{"name" => name, "args" => args}} | _]
+            }
+          }
+          | _
+        ]
+      } ->
+        {:ok,
+         %LLM.FunctionCall{
+           name: name,
+           arguments:
+             args
+             |> Enum.map(fn {name, value} ->
+               {String.to_existing_atom(name), value}
+             end)
+             |> Enum.into(%{})
+         }}
 
       %{"error" => error} ->
         {:error, "API error: #{inspect(error)}"}

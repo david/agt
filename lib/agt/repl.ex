@@ -6,6 +6,8 @@ defmodule Agt.REPL do
   alias Agt.Agent
   alias Agt.AgentSupervisor
   alias Agt.Config
+  alias Agt.LLM
+  alias Agt.Tools
 
   @prompt " "
 
@@ -34,9 +36,31 @@ defmodule Agt.REPL do
   end
 
   defp get_input do
-    :io.get_line(:standard_io, "")
-    |> to_string()
-    |> String.trim()
+    get_multiline_input([])
+  end
+
+  defp get_multiline_input(lines) do
+    # Show continuation prompt after first line
+    prompt = if length(lines) == 0, do: "", else: "… "
+
+    line =
+      :io.get_line(:standard_io, prompt)
+      |> to_string()
+      |> String.trim_trailing("\n")
+
+    cond do
+      # Check if last two lines are empty (triple enter to send)
+      length(lines) >= 1 and line == "" and List.last(lines) == "" ->
+        lines
+        # Remove the last empty line
+        |> Enum.drop(-1)
+        |> Enum.join("\n")
+        |> String.trim()
+
+      # Continue collecting lines
+      true ->
+        get_multiline_input(lines ++ [line])
+    end
   end
 
   defp handle_input("", agent), do: loop(agent)
@@ -46,10 +70,19 @@ defmodule Agt.REPL do
     IO.puts("AI: ...")
     IO.puts("")
 
-    {:ok, response} = Agent.prompt(agent, message)
-    IO.puts("AI: #{response}")
+    handle_response(Agent.prompt(agent, message), agent)
+  end
+
+  defp handle_response({:ok, %LLM.Message{body: message}}, agent) do
+    IO.puts("AI: #{message}")
     IO.puts("")
 
     loop(agent)
+  end
+
+  defp handle_response({:ok, %LLM.FunctionCall{name: name, arguments: args}}, agent) do
+    Tools.call(name, args)
+    |> Agent.function_result(name, agent)
+    |> handle_response(agent)
   end
 end

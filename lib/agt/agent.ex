@@ -14,7 +14,15 @@ defmodule Agt.Agent do
   end
 
   def prompt(pid, message) do
-    GenServer.call(pid, {:prompt, message}, 120_000)
+    GenServer.call(pid, {:prompt, %Operator.Message{body: message}}, 120_000)
+  end
+
+  def function_result(result, name, pid) do
+    GenServer.call(
+      pid,
+      {:prompt, %Operator.FunctionResponse{name: name, result: result}},
+      120_000
+    )
   end
 
   @impl true
@@ -28,9 +36,7 @@ defmodule Agt.Agent do
         _from,
         %{conversation_id: conversation_id, messages: messages} = state
       ) do
-    {:ok, message} =
-      %Operator.Message{body: prompt}
-      |> Conversations.create_message(conversation_id)
+    {:ok, message} = Conversations.create_message(prompt, conversation_id)
 
     conversation = [message | messages]
 
@@ -41,6 +47,6 @@ defmodule Agt.Agent do
 
     {:ok, _message} = Conversations.create_message(response, conversation_id)
 
-    {:reply, {:ok, response.body}, %{state | messages: [response | conversation]}}
+    {:reply, {:ok, response}, %{state | messages: [response | conversation]}}
   end
 end
