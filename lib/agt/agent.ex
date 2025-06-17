@@ -7,20 +7,20 @@ defmodule Agt.Agent do
 
   alias Agt.Conversations
   alias Agt.GeminiClient
-  alias Agt.Operator
+  alias Agt.Message.{Prompt, FunctionResponse}
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args)
   end
 
   def prompt(pid, message) do
-    GenServer.call(pid, {:prompt, %Operator.Message{body: message}}, 120_000)
+    GenServer.call(pid, {:prompt, %Prompt{body: message}}, 120_000)
   end
 
   def function_result(result, name, pid) do
     GenServer.call(
       pid,
-      {:prompt, %Operator.FunctionResponse{name: name, result: result}},
+      {:prompt, %FunctionResponse{name: name, result: result}},
       120_000
     )
   end

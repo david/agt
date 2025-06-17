@@ -4,8 +4,7 @@ defmodule Agt.GeminiClient do
   """
 
   alias Agt.Config
-  alias Agt.LLM
-  alias Agt.Operator
+  alias Agt.Message.{Prompt, Response, FunctionCall, FunctionResponse}
   alias Agt.Tools
 
   @base_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-06-05:generateContent"
@@ -38,17 +37,17 @@ defmodule Agt.GeminiClient do
     end
   end
 
-  defp make_turn(%Operator.Message{body: body}), do: %{role: "user", parts: %{text: body}}
-  defp make_turn(%LLM.Message{body: body}), do: %{role: "model", parts: %{text: body}}
-  defp make_turn(%LLM.FunctionCall{}), do: %{role: "model", parts: %{text: ""}}
+  defp make_turn(%Prompt{body: body}), do: %{role: "user", parts: %{text: body}}
+  defp make_turn(%Response{body: body}), do: %{role: "model", parts: %{text: body}}
+  defp make_turn(%FunctionResponse{}), do: %{role: "model", parts: %{text: ""}}
 
-  defp make_turn(%Operator.FunctionResponse{name: name, result: result}),
+  defp make_turn(%FunctionResponse{name: name, result: result}),
     do: %{role: "model", parts: %{functionResponse: %{name: name, response: %{result: result}}}}
 
   defp parse_response(response) do
     case response do
       %{"candidates" => [%{"content" => %{"parts" => [%{"text" => text} | _]}} | _]} ->
-        {:ok, %LLM.Message{body: text}}
+        {:ok, %Response{body: text}}
 
       %{
         "candidates" => [
@@ -61,7 +60,7 @@ defmodule Agt.GeminiClient do
         ]
       } ->
         {:ok,
-         %LLM.FunctionCall{
+         %FunctionCall{
            name: name,
            arguments:
              args

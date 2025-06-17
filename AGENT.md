@@ -14,12 +14,9 @@ agt/
 │   ├── config.ex       # Configuration management
 │   ├── conversations.ex # Conversation persistence
 │   ├── gemini_client.ex # Google Gemini API client
-│   ├── llm.ex          # LLM message structures
-│   ├── operator.ex     # User message structures
+│   ├── message.ex          # Message structs
 │   └── repl.ex         # Interactive REPL
 ├── test/               # Test files
-├── conversations/      # Persistent conversation storage
-├── bin/up             # Docker development script
 └── mix.exs           # Project configuration
 ```
 
@@ -54,7 +51,6 @@ agt/
 - **GenServers**: Agents are implemented as GenServers for state management
 - **Supervisors**: Agent supervision for fault tolerance
 - **Message Passing**: Communication via GenServer calls/casts
-- **Data Structures**: Separate message structs for different roles (Operator, LLM)
 
 ### Module Organization
 - Modules are organized under `Agt` namespace

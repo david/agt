@@ -6,7 +6,7 @@ defmodule Agt.REPL do
   alias Agt.Agent
   alias Agt.AgentSupervisor
   alias Agt.Config
-  alias Agt.LLM
+  alias Agt.Message.{FunctionCall, Response}
   alias Agt.Tools
 
   @prompt " "
@@ -73,14 +73,14 @@ defmodule Agt.REPL do
     handle_response(Agent.prompt(agent, message), agent)
   end
 
-  defp handle_response({:ok, %LLM.Message{body: message}}, agent) do
+  defp handle_response({:ok, %Response{body: message}}, agent) do
     IO.puts("AI: #{message}")
     IO.puts("")
 
     loop(agent)
   end
 
-  defp handle_response({:ok, %LLM.FunctionCall{name: name, arguments: args}}, agent) do
+  defp handle_response({:ok, %FunctionCall{name: name, arguments: args}}, agent) do
     Tools.call(name, args)
     |> Agent.function_result(name, agent)
     |> handle_response(agent)
