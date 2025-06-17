@@ -3,10 +3,14 @@ defmodule Agt.Conversations do
   Conversations storage
   """
 
+  @path ".agt/conversations"
+
   def create_message(message, conversation_id) do
     iodata = JSON.encode_to_iodata!(message)
 
-    File.mkdir_p!("conversations/#{conversation_id}")
+    [@path, conversation_id]
+    |> Path.join()
+    |> File.mkdir_p!()
 
     write_message(iodata, conversation_id)
 
@@ -35,7 +39,7 @@ defmodule Agt.Conversations do
   end
 
   defp write_file(message, conversation_id, message_id) do
-    path = "conversations/#{conversation_id}/#{message_id}.json"
+    path = Path.join([@path, conversation_id, "#{message_id}.json"])
 
     if File.exists?(path) do
       {:error_exists, "Message file exists: #{path}"}
