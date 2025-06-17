@@ -1,0 +1,13 @@
+services:
+  dev:
+    image: dev/agt
+    command: ["sleep", "infinity"]
+    environment:
+      GEMINI_API_KEY: "${GEMINI_API_KEY}"
+    volumes:
+      - ".:${PWD}:rw"
+      - "hex:/home/dev/.hex:rw"
+    working_dir: "${PWD}"
+
+volumes:
+  hex:

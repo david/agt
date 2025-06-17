@@ -1,0 +1,12 @@
+#!/bin/bash
+
+docker build \
+  --build-arg UID=$(id -u) \
+  --build-arg USER=$(id -un) \
+  --build-arg PWD=$(pwd) \
+  --progress plain \
+  --tag dev/agt \
+  --file dev.dockerfile \
+  .
+
+exec docker compose up

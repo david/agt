@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e
+
+SCRIPT=$(basename "$0")
+
+case $SCRIPT in
+  rundev)
+    ARGV=("$@")
+    ;;
+  *)
+    ARGV=("$SCRIPT $@")
+    ;;
+esac
+
+exec docker compose exec dev ${ARGV[@]}

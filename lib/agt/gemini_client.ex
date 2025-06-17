@@ -3,26 +3,32 @@ defmodule Agt.GeminiClient do
   Client for interacting with Google Gemini API
   """
 
+  alias Agt.Config
+
   @base_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-06-05:generateContent"
 
-  def generate_content(message, api_key) do
+  defmodule Operator.Message do
+    defstruct [:body]
+  end
+
+  defmodule LLM.Message do
+    defstruct [:body]
+  end
+
+  def generate_content(conversation) do
+    {:ok, api_key} = Config.get_api_key()
+
     headers = [
       {"Content-Type", "application/json"}
     ]
 
     body = %{
-      contents: [
-        %{
-          parts: [
-            %{text: message}
-          ]
-        }
-      ]
+      contents: Enum.map(conversation, &make_turn/1)
     }
 
     url = "#{@base_url}?key=#{api_key}"
 
-    case Req.post(url, json: body, headers: headers, receive_timeout: 30_000) do
+    case Req.post(url, json: body, headers: headers, receive_timeout: 60_000) do
       {:ok, %{status: 200, body: response_body}} ->
         parse_response(response_body)
 
@@ -34,10 +40,13 @@ defmodule Agt.GeminiClient do
     end
   end
 
+  defp make_turn(%Operator.Message{body: body}), do: %{role: "user", parts: %{text: body}}
+  defp make_turn(%LLM.Message{body: body}), do: %{role: "model", parts: %{text: body}}
+
   defp parse_response(response) do
     case response do
       %{"candidates" => [%{"content" => %{"parts" => [%{"text" => text} | _]}} | _]} ->
-        {:ok, text}
+        {:ok, %LLM.Message{body: text}}
 
       %{"error" => error} ->
         {:error, "API error: #{inspect(error)}"}
