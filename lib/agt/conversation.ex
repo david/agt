@@ -6,7 +6,7 @@ defmodule Agt.Conversation do
   use GenServer
 
   alias Agt.GeminiClient
-  alias Agt.GeminiClient.Operator
+  alias Agt.Operator
 
   def start_link(opts) do
     GenServer.start_link(__MODULE__, :ok, opts)

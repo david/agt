@@ -4,16 +4,10 @@ defmodule Agt.GeminiClient do
   """
 
   alias Agt.Config
+  alias Agt.LLM
+  alias Agt.Operator
 
   @base_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-06-05:generateContent"
-
-  defmodule Operator.Message do
-    defstruct [:body]
-  end
-
-  defmodule LLM.Message do
-    defstruct [:body]
-  end
 
   def generate_content(conversation) do
     {:ok, api_key} = Config.get_api_key()
