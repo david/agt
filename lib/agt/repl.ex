@@ -44,17 +44,10 @@ defmodule Agt.REPL do
   defp handle_input("", agent), do: loop(agent)
 
   defp handle_input(message, agent) do
-    IO.puts("")
-    IO.puts("[Prompt]")
-    IO.puts("")
-
     handle_response(Agent.prompt(agent, message), agent)
   end
 
   defp handle_response({:error, :timeout}, agent) do
-    IO.puts("[Timeout: retrying...]")
-    IO.puts("")
-
     agent
     |> Agent.retry()
     |> handle_response(agent)
@@ -63,16 +56,13 @@ defmodule Agt.REPL do
   end
 
   defp handle_response({:ok, %Response{body: message}}, agent) do
-    IO.puts(message)
     IO.puts("")
+    IO.puts(message)
 
     loop(agent)
   end
 
   defp handle_response({:ok, %FunctionCall{name: name, arguments: args}}, agent) do
-    IO.puts("[FunctionCall name=#{name} args=#{inspect(args)}]")
-    IO.puts("")
-
     Tools.call(name, args)
     |> Agent.function_result(name, agent)
     |> handle_response(agent)
