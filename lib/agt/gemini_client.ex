@@ -7,7 +7,7 @@ defmodule Agt.GeminiClient do
   alias Agt.Message.{Prompt, Response, FunctionCall, FunctionResponse}
   alias Agt.Tools
 
-  @base_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-06-05:generateContent"
+  @base_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
 
   def generate_content(conversation) do
     {:ok, api_key} = Config.get_api_key()
