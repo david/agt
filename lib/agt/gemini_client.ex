@@ -39,10 +39,15 @@ defmodule Agt.GeminiClient do
 
   defp make_turn(%Prompt{body: body}), do: %{role: "user", parts: %{text: body}}
   defp make_turn(%Response{body: body}), do: %{role: "model", parts: %{text: body}}
-  defp make_turn(%FunctionCall{}), do: %{role: "model", parts: %{text: ""}}
+
+  defp make_turn(%FunctionCall{name: name, arguments: _args}),
+    do: %{role: "function_call", parts: %{functionCall: %{name: name, args: %{}}}}
 
   defp make_turn(%FunctionResponse{name: name, result: result}),
-    do: %{role: "model", parts: %{functionResponse: %{name: name, response: %{result: result}}}}
+    do: %{
+      role: "function_result",
+      parts: %{functionResponse: %{name: name, response: %{result: result}}}
+    }
 
   defp parse_response(response) do
     case response do
