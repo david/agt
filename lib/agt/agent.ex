@@ -16,18 +16,18 @@ defmodule Agt.Agent do
   end
 
   def retry(pid) do
-    GenServer.call(pid, :retry, 120_000)
+    GenServer.call(pid, :retry, 300_000)
   end
 
   def prompt(pid, message) do
-    GenServer.call(pid, {:prompt, %Prompt{body: message}}, 120_000)
+    GenServer.call(pid, {:prompt, %Prompt{body: message}}, 300_000)
   end
 
   def function_result(result, name, pid) do
     GenServer.call(
       pid,
       {:prompt, %FunctionResponse{name: name, result: result}},
-      120_000
+      300_000
     )
   end
 
