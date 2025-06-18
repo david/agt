@@ -19,14 +19,14 @@ defmodule Agt.Agent do
     GenServer.call(pid, :retry, 300_000)
   end
 
-  def prompt(pid, message) do
-    GenServer.call(pid, {:prompt, %Prompt{body: message}}, 300_000)
+  def prompt(%Prompt{} = prompt, pid) do
+    GenServer.call(pid, {:prompt, prompt}, 300_000)
   end
 
-  def function_result(result, name, pid) do
+  def function_result(%FunctionResponse{} = response, pid) do
     GenServer.call(
       pid,
-      {:prompt, %FunctionResponse{name: name, result: result}},
+      {:prompt, response},
       300_000
     )
   end
@@ -63,14 +63,20 @@ defmodule Agt.Agent do
   end
 
   defp handle_response(
-         {:ok, response},
+         {:ok, parts},
          %{conversation_id: conversation_id, messages: messages} = state
        ) do
-    {:ok, _message} = Conversations.create_message(response, conversation_id)
+    IO.inspect(parts, label: "response")
 
-    log_message(response)
+    # FIXME: Should be transactional (?)
+    for part <- parts do
+      # FIXME: DRY: Should be part of the main flow (handle_call(...))
+      log_message(part)
 
-    {:reply, {:ok, response}, %{state | messages: [response | messages]}}
+      {:ok, _message} = Conversations.create_message(part, conversation_id)
+    end
+
+    {:reply, {:ok, parts}, %{state | messages: parts ++ messages}}
   end
 
   defp handle_response({:error, error}, state) do

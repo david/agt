@@ -6,7 +6,7 @@ defmodule Agt.REPL do
   alias Agt.Agent
   alias Agt.AgentSupervisor
   alias Agt.Config
-  alias Agt.Message.{FunctionCall, Response}
+  alias Agt.Message.{FunctionCall, FunctionResponse, Prompt, Response}
   alias Agt.Tools
 
   @prompt " "
@@ -28,7 +28,45 @@ defmodule Agt.REPL do
   defp loop(agent) do
     show_prompt()
 
-    get_input() |> handle_input(agent)
+    get_input() 
+    |> handle_input(agent)
+    |> handle_response(agent)
+    
+    loop(agent)
+  end
+
+  defp handle_input(%Prompt{body: ""}, agent), do: nil
+  defp handle_input(%Prompt{} = prompt, agent), do: prompt |> Agent.prompt(agent)
+
+  defp handle_response(nil, agent), do: nil
+
+  defp handle_response({:ok, responses}, agent) when is_list(responses) do
+    Enum.each(responses, &handle_response(&1, agent))
+  end
+
+  defp handle_response({:error, :timeout}, agent) do
+    agent
+    |> Agent.retry()
+    |> handle_response(agent)
+  end
+
+  defp handle_response(%Response{body: message}, agent) do
+    IO.puts("")
+    IO.puts(message)
+  end
+
+  defp handle_response(%FunctionCall{name: name, arguments: args}, agent) do
+    IO.puts("")
+    IO.puts("[Function Call: name=#{name} arguments=#{inspect(args)}]")
+
+    %FunctionResponse{name: name, result: Tools.call(name, args)}
+    |> Agent.function_result(agent)
+    |> handle_response(agent)
+  end
+
+  defp handle_response(%FunctionResponse{name: name, result: result}, agent) do
+    IO.puts("")
+    IO.puts("[Function Response: name=#{name} result=#{inspect(result)}]")
   end
 
   defp show_prompt do
@@ -36,35 +74,30 @@ defmodule Agt.REPL do
   end
 
   defp get_input do
-    :io.get_line(:standard_io, "")
-    |> to_string()
-    |> String.trim()
+    %Prompt{body: get_multiline_input([])}
   end
 
-  defp handle_input("", agent), do: loop(agent)
+  defp get_multiline_input(lines) do
+    # Show continuation prompt after first line
+    prompt = if length(lines) == 0, do: "", else: "… "
 
-  defp handle_input(message, agent) do
-    handle_response(Agent.prompt(agent, message), agent)
-  end
+    line =
+      :io.get_line(:standard_io, prompt)
+      |> to_string()
+      |> String.trim_trailing("\n")
 
-  defp handle_response({:error, :timeout}, agent) do
-    agent
-    |> Agent.retry()
-    |> handle_response(agent)
+    cond do
+      # Check if last two lines are empty (triple enter to send)
+      length(lines) >= 1 and line == "" and List.last(lines) == "" ->
+        lines
+        # Remove the last empty line
+        |> Enum.drop(-1)
+        |> Enum.join("\n")
+        |> String.trim()
 
-    loop(agent)
-  end
-
-  defp handle_response({:ok, %Response{body: message}}, agent) do
-    IO.puts("")
-    IO.puts(message)
-
-    loop(agent)
-  end
-
-  defp handle_response({:ok, %FunctionCall{name: name, arguments: args}}, agent) do
-    Tools.call(name, args)
-    |> Agent.function_result(name, agent)
-    |> handle_response(agent)
+      # Continue collecting lines
+      true ->
+        get_multiline_input(lines ++ [line])
+    end
   end
 end

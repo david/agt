@@ -6,6 +6,8 @@ defmodule Agt.Tools do
   # TODO: I imagine the `meta` functions could be implemented with some elixir magic,
   # as attributes of the `call` function. But is it worth it?
 
+  require Logger
+
   defmodule ListFiles do
     def name, do: "list_files"
 
@@ -28,6 +30,8 @@ defmodule Agt.Tools do
       # TODO: This is a bit of a hack, but it works for now. The list of files
       # is hardcoded, but it would be better to dynamically generate it based
       # on the project structure.
+
+      Logger.info("ListFiles")
 
       [
         "mix.exs",
@@ -62,6 +66,8 @@ defmodule Agt.Tools do
     end
 
     def call(%{path: path}) do
+      Logger.info("ReadFile: path=#{path}")
+
       file_list = ListFiles.call(%{})
 
       if Enum.member?(file_list, path) do
@@ -77,8 +83,12 @@ defmodule Agt.Tools do
       end
     end
 
+    def call(%{}) do
+      "Error: missing required argument `path`"
+    end
+
     def call(_args) do
-      {:error, "Bad arguments"}
+      "Error: unexpected arguments. Expected `path`"
     end
   end
 
@@ -112,6 +122,8 @@ defmodule Agt.Tools do
     end
 
     def call(%{path: path, content: content}) do
+      Logger.info("WriteFile: path=#{path}")
+
       expanded_path = Path.expand(path)
 
       if String.starts_with?(expanded_path, File.cwd!()) do
@@ -125,8 +137,12 @@ defmodule Agt.Tools do
       end
     end
 
+    def call(%{}) do
+      "Error: missing required arguments `path` and `content`"
+    end
+
     def call(_args) do
-      {:error, "Bad arguments"}
+      "Error: unexpected arguments. Expected `path` and `content`"
     end
   end
 

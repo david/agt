@@ -27,7 +27,7 @@ defmodule Agt.GeminiClient do
 
     case Req.post(url, json: body, headers: headers, receive_timeout: 60_000) do
       {:ok, %{status: 200, body: response_body}} ->
-        parse_response(response_body)
+        {:ok, parse_response(response_body)}
 
       {:ok, %{status: status, body: body}} ->
         {:error, "API request failed with status #{status}: #{inspect(body)}"}
@@ -49,37 +49,25 @@ defmodule Agt.GeminiClient do
       parts: %{functionResponse: %{name: name, response: %{result: result}}}
     }
 
-  defp parse_response(response) do
-    case response do
-      %{"candidates" => [%{"content" => %{"parts" => [%{"text" => text} | _]}} | _]} ->
-        {:ok, %Response{body: text}}
+  defp parse_response(%{"candidates" => [%{"content" => %{"parts" => parts}} | _]} = response) do
+    IO.inspect(response)
 
-      %{
-        "candidates" => [
-          %{
-            "content" => %{
-              "parts" => [%{"functionCall" => %{"name" => name, "args" => args}} | _]
-            }
-          }
-          | _
-        ]
-      } ->
-        {:ok,
-         %FunctionCall{
-           name: name,
-           arguments:
-             args
-             |> Enum.map(fn {name, value} ->
-               {String.to_existing_atom(name), value}
-             end)
-             |> Enum.into(%{})
-         }}
-
-      %{"error" => error} ->
-        {:error, "API error: #{inspect(error)}"}
-
-      _ ->
-        {:error, "Unexpected response format: #{inspect(response)}"}
-    end
+    for part <- parts, do: parse_part(part)
   end
+
+  # defp parse_response(%{"error" => error}), do: {:error, "API error: #{inspect(error)}"}
+  # defp parse_response(_), do: {:error, "Unexpected response format"}
+
+  defp parse_part(%{"text" => text}), do: %Response{body: text}
+
+  defp parse_part(%{"functionCall" => %{"name" => name, "args" => args}}),
+    do: %FunctionCall{
+      name: name,
+      arguments:
+        args
+        |> Enum.map(fn {name, value} ->
+          {String.to_existing_atom(name), value}
+        end)
+        |> Enum.into(%{})
+    }
 end
