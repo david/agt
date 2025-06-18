@@ -51,6 +51,17 @@ defmodule Agt.REPL do
     handle_response(Agent.prompt(agent, message), agent)
   end
 
+  defp handle_response({:error, :timeout}, agent) do
+    IO.puts("[Timeout: retrying...]")
+    IO.puts("")
+
+    agent
+    |> Agent.retry()
+    |> handle_response(agent)
+
+    loop(agent)
+  end
+
   defp handle_response({:ok, %Response{body: message}}, agent) do
     IO.puts(message)
     IO.puts("")

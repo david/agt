@@ -13,6 +13,10 @@ defmodule Agt.Agent do
     GenServer.start_link(__MODULE__, args)
   end
 
+  def retry(pid) do
+    GenServer.call(pid, :retry, 120_000)
+  end
+
   def prompt(pid, message) do
     GenServer.call(pid, {:prompt, %Prompt{body: message}}, 120_000)
   end
@@ -38,15 +42,38 @@ defmodule Agt.Agent do
       ) do
     {:ok, message} = Conversations.create_message(prompt, conversation_id)
 
-    conversation = [message | messages]
+    messages = [message | messages]
 
-    {:ok, response} =
-      conversation
-      |> Enum.reverse()
-      |> GeminiClient.generate_content()
+    messages
+    |> Enum.reverse()
+    |> GeminiClient.generate_content()
+    |> handle_response(%{state | messages: messages})
+  end
 
+  @impl true
+  def handle_call(:retry, _from, %{messages: messages} = state) do
+    messages
+    |> Enum.reverse()
+    |> GeminiClient.generate_content()
+    |> handle_response(state)
+  end
+
+  defp handle_response({:error, error}, state) do
+    cond do
+      String.match?(error, ~r/reason: :timeout/) ->
+        {:reply, {:error, :timeout}, state}
+
+      true ->
+        {:reply, {:error, error}, state}
+    end
+  end
+
+  defp handle_response(
+         {:ok, response},
+         %{conversation_id: conversation_id, messages: messages} = state
+       ) do
     {:ok, _message} = Conversations.create_message(response, conversation_id)
 
-    {:reply, {:ok, response}, %{state | messages: [response | conversation]}}
+    {:reply, {:ok, response}, %{state | messages: [response | messages]}}
   end
 end
