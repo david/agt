@@ -36,51 +36,31 @@ defmodule Agt.REPL do
   end
 
   defp get_input do
-    get_multiline_input([])
-  end
-
-  defp get_multiline_input(lines) do
-    # Show continuation prompt after first line
-    prompt = if length(lines) == 0, do: "", else: "… "
-
-    line =
-      :io.get_line(:standard_io, prompt)
-      |> to_string()
-      |> String.trim_trailing("\n")
-
-    cond do
-      # Check if last two lines are empty (triple enter to send)
-      length(lines) >= 1 and line == "" and List.last(lines) == "" ->
-        lines
-        # Remove the last empty line
-        |> Enum.drop(-1)
-        |> Enum.join("\n")
-        |> String.trim()
-
-      # Continue collecting lines
-      true ->
-        get_multiline_input(lines ++ [line])
-    end
+    :io.get_line(:standard_io, "")
+    |> to_string()
+    |> String.trim()
   end
 
   defp handle_input("", agent), do: loop(agent)
 
   defp handle_input(message, agent) do
     IO.puts("")
-    IO.puts("AI: ...")
+    IO.puts("...")
     IO.puts("")
 
     handle_response(Agent.prompt(agent, message), agent)
   end
 
   defp handle_response({:ok, %Response{body: message}}, agent) do
-    IO.puts("AI: #{message}")
+    IO.puts(message)
     IO.puts("")
 
     loop(agent)
   end
 
   defp handle_response({:ok, %FunctionCall{name: name, arguments: args}}, agent) do
+    IO.puts("[FunctionCall name=#{name} args=#{inspect(args)}]")
+
     Tools.call(name, args)
     |> Agent.function_result(name, agent)
     |> handle_response(agent)
