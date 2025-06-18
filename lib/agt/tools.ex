@@ -7,9 +7,11 @@ defmodule Agt.Tools do
   # as attributes of the `call` function. But is it worth it?
 
   defmodule ListFiles do
+    def name, do: "list_files"
+
     def meta do
       %{
-        name: "list_files",
+        name: name(),
         description: """
           Lists all relevant project files.
 
@@ -22,7 +24,7 @@ defmodule Agt.Tools do
       }
     end
 
-    def call do
+    def call(_args) do
       # TODO: This is a bit of a hack, but it works for now. The list of files
       # is hardcoded, but it would be better to dynamically generate it based
       # on the project structure.
@@ -36,9 +38,11 @@ defmodule Agt.Tools do
   end
 
   defmodule ReadFile do
+    def name, do: "read_file"
+
     def meta do
       %{
-        name: "read_file",
+        name: name(),
         description: "Reads the content of a file belonging to the project.",
         parameters: %{
           type: "object",
@@ -58,7 +62,7 @@ defmodule Agt.Tools do
     end
 
     def call(%{path: path}) do
-      file_list = ListFiles.call()
+      file_list = ListFiles.call(%{})
 
       if Enum.member?(file_list, path) do
         case File.read(path) do
@@ -75,9 +79,11 @@ defmodule Agt.Tools do
   end
 
   defmodule WriteFile do
+    def name, do: "write_file"
+
     def meta do
       %{
-        name: "write_file",
+        name: name(),
         description: "Writes a file to the project.",
         parameters: %{
           type: "object",
@@ -124,7 +130,5 @@ defmodule Agt.Tools do
     ]
   end
 
-  def call("list_files", _args), do: ListFiles.call()
-  def call("read_file", args), do: ReadFile.call(args)
-  def call("write_file", args), do: WriteFile.call(args)
+  def call(tool, args), do: list() |> Enum.find(&(&1.name() == tool)) |> then(& &1.call(args))
 end
