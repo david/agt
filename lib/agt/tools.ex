@@ -76,6 +76,10 @@ defmodule Agt.Tools do
         {:error, "File not found: #{path}"}
       end
     end
+
+    def call(_args) do
+      {:error, "Bad arguments"}
+    end
   end
 
   defmodule WriteFile do
@@ -119,6 +123,10 @@ defmodule Agt.Tools do
             result
         end
       end
+    end
+
+    def call(_args) do
+      {:error, "Bad arguments"}
     end
   end
 
