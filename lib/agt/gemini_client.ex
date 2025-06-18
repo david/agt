@@ -25,7 +25,7 @@ defmodule Agt.GeminiClient do
 
     url = "#{@base_url}?key=#{api_key}"
 
-    case Req.post(url, json: body, headers: headers, receive_timeout: 60_000) do
+    case Req.post(url, json: body, headers: headers, receive_timeout: 120_000) do
       {:ok, %{status: 200, body: response_body}} ->
         parse_response(response_body)
 
