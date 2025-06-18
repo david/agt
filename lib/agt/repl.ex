@@ -45,7 +45,7 @@ defmodule Agt.REPL do
 
   defp handle_input(message, agent) do
     IO.puts("")
-    IO.puts("...")
+    IO.puts("[Prompt]")
     IO.puts("")
 
     handle_response(Agent.prompt(agent, message), agent)
@@ -71,6 +71,7 @@ defmodule Agt.REPL do
 
   defp handle_response({:ok, %FunctionCall{name: name, arguments: args}}, agent) do
     IO.puts("[FunctionCall name=#{name} args=#{inspect(args)}]")
+    IO.puts("")
 
     Tools.call(name, args)
     |> Agent.function_result(name, agent)
