@@ -49,7 +49,7 @@ defmodule Agt.GeminiClient do
       parts: %{functionResponse: %{name: name, response: %{result: result}}}
     }
 
-  defp parse_response(%{"candidates" => [%{"content" => %{"parts" => parts}} | _]} = response) do
+  defp parse_response(%{"candidates" => [%{"content" => %{"parts" => parts}} | _]}) do
     for part <- parts, do: parse_part(part)
   end
 

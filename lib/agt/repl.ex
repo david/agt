@@ -35,10 +35,10 @@ defmodule Agt.REPL do
     loop(agent)
   end
 
-  defp handle_input(%Prompt{body: ""}, agent), do: nil
-  defp handle_input(%Prompt{} = prompt, agent), do: prompt |> Agent.prompt(agent)
+  defp handle_input(%Prompt{body: ""}, _agent), do: nil
+  defp handle_input(%Prompt{} = prompt, agent), do: Agent.prompt(prompt, agent)
 
-  defp handle_response(nil, agent), do: nil
+  defp handle_response(nil, _agent), do: nil
 
   defp handle_response({:ok, responses}, agent) when is_list(responses) do
     Enum.each(responses, &handle_response(&1, agent))
@@ -50,7 +50,7 @@ defmodule Agt.REPL do
     |> handle_response(agent)
   end
 
-  defp handle_response(%Response{body: message}, agent) do
+  defp handle_response(%Response{body: message}, _agent) do
     IO.puts("")
     IO.puts(message)
   end
@@ -64,7 +64,7 @@ defmodule Agt.REPL do
     |> handle_response(agent)
   end
 
-  defp handle_response(%FunctionResponse{name: name, result: result}, agent) do
+  defp handle_response(%FunctionResponse{name: name, result: result}, _agent) do
     IO.puts("")
     IO.puts("[Function Response: name=#{name} result=#{inspect(result)}]")
   end
