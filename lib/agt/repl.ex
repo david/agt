@@ -28,20 +28,21 @@ defmodule Agt.REPL do
   defp loop(agent) do
     show_prompt()
 
-    get_prompt() 
+    get_prompt()
     |> send_prompt(agent)
     |> handle_response(agent)
-    
+
     loop(agent)
   end
 
   defp send_prompt(%Prompt{body: ""}, _agent), do: nil
-  defp send_prompt(%Prompt{} = prompt, agent), do: Agent.prompt(prompt, agent)
+  defp send_prompt(%Prompt{} = prompt, agent), do: Agent.prompt([prompt], agent)
 
   defp handle_response(nil, _agent), do: nil
 
   defp handle_response({:ok, response}, agent) when is_list(response) do
-    Enum.each(response, &handle_response_part(&1, agent))
+    handle_text_parts(response)
+    handle_function_calls(response, agent)
   end
 
   defp handle_response({:error, :timeout}, agent) do
@@ -50,18 +51,26 @@ defmodule Agt.REPL do
     |> handle_response(agent)
   end
 
-  defp handle_response_part(%Response{body: message}, _agent) do
-    IO.puts("")
-    IO.puts(message)
+  defp handle_text_parts(parts) do
+    for %{body: body} = part <- parts, match?(%Response{}, part), String.trim(body) != "" do
+      IO.puts("")
+      IO.puts(body)
+    end
   end
 
-  defp handle_response_part(%FunctionCall{name: name, arguments: args}, agent) do
-    IO.puts("")
-    IO.puts("[Function Call: name=#{name} arguments=#{inspect(args)}]")
+  defp handle_function_calls(parts, agent) do
+    results =
+      for(
+        %{name: name, arguments: args} = part <- parts,
+        match?(%FunctionCall{}, part),
+        do: %FunctionResponse{name: name, result: Tools.call(name, args)}
+      )
 
-    %FunctionResponse{name: name, result: Tools.call(name, args)}
-    |> Agent.function_result(agent)
-    |> handle_response(agent)
+    if Enum.any?(results) do
+      results
+      |> Agent.prompt(agent)
+      |> handle_response(agent)
+    end
   end
 
   defp show_prompt do

@@ -7,7 +7,6 @@ defmodule Agt.Agent do
 
   alias Agt.Conversations
   alias Agt.GeminiClient
-  alias Agt.Message.{FunctionCall, FunctionResponse, Prompt, Response}
 
   require Logger
 
@@ -19,16 +18,8 @@ defmodule Agt.Agent do
     GenServer.call(pid, :retry, 300_000)
   end
 
-  def prompt(%Prompt{} = prompt, pid) do
+  def prompt(prompt, pid) when is_list(prompt) do
     GenServer.call(pid, {:prompt, prompt}, 300_000)
-  end
-
-  def function_result(%FunctionResponse{} = response, pid) do
-    GenServer.call(
-      pid,
-      {:prompt, response},
-      300_000
-    )
   end
 
   @impl true
@@ -42,11 +33,13 @@ defmodule Agt.Agent do
         _from,
         %{conversation_id: conversation_id, messages: messages} = state
       ) do
-    {:ok, message} = Conversations.create_message(prompt, conversation_id)
+    for part <- prompt do
+      {:ok, _message} = Conversations.create_message(part, conversation_id)
 
-    messages = [message | messages]
-    debug(part)
+      debug(part)
+    end
 
+    messages = prompt ++ messages
 
     messages
     |> Enum.reverse()
