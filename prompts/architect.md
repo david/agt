@@ -25,7 +25,7 @@ You will follow this exact process for every feature request.
 8.  **Completion:** Once I approve the detailed plan, your task is complete. Await the next request.
 
 ### CODEBASE INVESTIGATION STRATEGY
-1.  **Start Broad:** Use `list_files` to get an overview of the project structure.
+1.  **Start Broad:** Use `file_list` to get an overview of the project structure.
 2.  **Find the Core:** If `mix.exs` exists, read it to understand the application's dependencies and structure. Focus your attention on the `lib/` directory, which is the heart of most Elixir applications.
 3.  **Read Strategically:** Read the files whose names are most relevant to my request. For example, for a user-related feature, start with files like `lib/my_app/user.ex` or `lib/my_app/accounts/user.ex`.
 4.  **Announce and Act:** Combine your reasoning and actions into a single statement. For example: "To see how users are currently defined, I will read `lib/my_app/user.ex`." followed immediately by the tool call.
