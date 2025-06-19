@@ -66,8 +66,6 @@ defmodule Agt.Agent do
          {:ok, parts},
          %{conversation_id: conversation_id, messages: messages} = state
        ) do
-    IO.inspect(parts, label: "response")
-
     # FIXME: Should be transactional (?)
     for part <- parts do
       # FIXME: DRY: Should be part of the main flow (handle_call(...))

@@ -50,8 +50,6 @@ defmodule Agt.GeminiClient do
     }
 
   defp parse_response(%{"candidates" => [%{"content" => %{"parts" => parts}} | _]} = response) do
-    IO.inspect(response)
-
     for part <- parts, do: parse_part(part)
   end
 
