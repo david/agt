@@ -53,7 +53,8 @@ defmodule Agt.Tools do
           Expects a `path` argument, to always be provided.
 
           Returns the content of the file as a string.
-          Returns an error message on failure, with the format `Error: <message>`.
+
+          On failure, returns an object with the format `{"error": "<message>"}`.
         """,
         parameters: %{
           type: "object",
@@ -80,22 +81,22 @@ defmodule Agt.Tools do
       if Enum.member?(file_list, path) do
         case File.read(path) do
           {:error, reason} ->
-            {:error, "Failed to read file: #{reason}"}
+            %{error: "Failed to read file: #{reason}"}
 
           {:ok, content} ->
             content
         end
       else
-        {:error, "File not found: #{path}"}
+        %{error: "File not found: #{path}"}
       end
     end
 
     def call(%{}) do
-      "Error: missing required argument `path`"
+      %{error: "Error: missing required argument `path`"}
     end
 
     def call(_args) do
-      "Error: unexpected arguments. Expected `path`"
+      %{error: "Error: unexpected arguments. Expected `path`"}
     end
   end
 
@@ -111,7 +112,8 @@ defmodule Agt.Tools do
           Expects a `path` and `content` argument to always be provided.
 
           Returns the string `:ok` on success.
-          Returns an error message on failure, with the format `Error: <message>`.
+
+          On failure, returns an object with the format `{"error": "<message>"}`.
         """,
         parameters: %{
           type: "object",
@@ -143,7 +145,7 @@ defmodule Agt.Tools do
       if String.starts_with?(expanded_path, File.cwd!()) do
         case File.write(expanded_path, content) do
           {:error, reason} ->
-            {:error, "Failed to write file: #{reason}"}
+            %{error: "Failed to write file: #{reason}"}
 
           result ->
             result
@@ -152,11 +154,11 @@ defmodule Agt.Tools do
     end
 
     def call(%{}) do
-      "Error: missing required arguments `path` and `content`"
+      %{error: "Error: missing required arguments `path` and `content`"}
     end
 
     def call(_args) do
-      "Error: unexpected arguments. Expected `path` and `content`"
+      %{error: "Error: unexpected arguments. Expected `path` and `content`"}
     end
   end
 
