@@ -47,7 +47,14 @@ defmodule Agt.Tools do
     def meta do
       %{
         name: name(),
-        description: "Reads the content of a file belonging to the project.",
+        description: """
+          Reads the content of a file belonging to the project.
+
+          Expects a `path` argument, to always be provided.
+
+          Returns the content of the file as a string.
+          Returns an error message on failure, with the format `Error: <message>`.
+        """,
         parameters: %{
           type: "object",
           properties: %{
@@ -98,7 +105,14 @@ defmodule Agt.Tools do
     def meta do
       %{
         name: name(),
-        description: "Writes a file to the project.",
+        description: """
+          Writes a file to the project.
+
+          Expects a `path` and `content` argument to always be provided.
+
+          Returns the string `:ok` on success.
+          Returns an error message on failure, with the format `Error: <message>`.
+        """,
         parameters: %{
           type: "object",
           properties: %{
