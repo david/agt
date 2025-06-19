@@ -28,20 +28,20 @@ defmodule Agt.REPL do
   defp loop(agent) do
     show_prompt()
 
-    get_input() 
-    |> handle_input(agent)
+    get_prompt() 
+    |> send_prompt(agent)
     |> handle_response(agent)
     
     loop(agent)
   end
 
-  defp handle_input(%Prompt{body: ""}, _agent), do: nil
-  defp handle_input(%Prompt{} = prompt, agent), do: Agent.prompt(prompt, agent)
+  defp send_prompt(%Prompt{body: ""}, _agent), do: nil
+  defp send_prompt(%Prompt{} = prompt, agent), do: Agent.prompt(prompt, agent)
 
   defp handle_response(nil, _agent), do: nil
 
-  defp handle_response({:ok, responses}, agent) when is_list(responses) do
-    Enum.each(responses, &handle_response(&1, agent))
+  defp handle_response({:ok, response}, agent) when is_list(response) do
+    Enum.each(response, &handle_response_part(&1, agent))
   end
 
   defp handle_response({:error, :timeout}, agent) do
@@ -50,12 +50,12 @@ defmodule Agt.REPL do
     |> handle_response(agent)
   end
 
-  defp handle_response(%Response{body: message}, _agent) do
+  defp handle_response_part(%Response{body: message}, _agent) do
     IO.puts("")
     IO.puts(message)
   end
 
-  defp handle_response(%FunctionCall{name: name, arguments: args}, agent) do
+  defp handle_response_part(%FunctionCall{name: name, arguments: args}, agent) do
     IO.puts("")
     IO.puts("[Function Call: name=#{name} arguments=#{inspect(args)}]")
 
@@ -64,16 +64,11 @@ defmodule Agt.REPL do
     |> handle_response(agent)
   end
 
-  defp handle_response(%FunctionResponse{name: name, result: result}, _agent) do
-    IO.puts("")
-    IO.puts("[Function Response: name=#{name} result=#{inspect(result)}]")
-  end
-
   defp show_prompt do
     IO.write(@prompt)
   end
 
-  defp get_input do
+  defp get_prompt do
     %Prompt{body: get_multiline_input([])}
   end
 
