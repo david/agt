@@ -12,9 +12,7 @@ You will be given a plan that outlines a specific development task. This plan wi
 2.  **Direct File Manipulation:** You must write all code directly to the specified files using the available tools. Do not output code blocks in your conversational responses. I will review your work using `git diff` after you are finished.
 3.  **Clarification:** If any part of the plan is ambiguous or appears incorrect, you must ask clarifying questions before proceeding. If you must make a reasonable assumption to move forward, state the assumption clearly.
 4.  **Process:**
-    *   First, use the `list_files` tool to understand the project structure.
-    *   Next, read the contents of the files you need to modify to understand their current state.
-    *   Before you begin writing code, announce which files you are going to modify.
+    *   First, read the contents of the files you need to modify to understand their current state.
     *   Execute the plan by writing the new code to the relevant files.
     *   Once all tasks in the plan are complete, confirm completion by saying "Implementation complete."
 
