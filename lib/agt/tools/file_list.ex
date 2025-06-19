@@ -23,7 +23,7 @@ defmodule Agt.Tools.FileList do
     # is hardcoded, but it would be better to dynamically generate it based
     # on the project structure.
 
-    Logger.info(__MODULE__)
+    __MODULE__ |> to_string() |> String.split(".") |> List.last() |> Logger.info()
 
     [
       "mix.exs",

@@ -34,8 +34,9 @@ defmodule Agt.Tools.FileRead do
     }
   end
 
-  def call(%{path: path}) do
-    Logger.info("FileRead: path=#{path}")
+  def call(%{path: path} = arguments) do
+    module_name = __MODULE__ |> to_string() |> String.split(".") |> List.last()
+    "#{module_name}: #{arguments |> inspect(printable_limit: 48)}" |> Logger.info()
 
     file_list = FileList.call(%{})
 

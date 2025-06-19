@@ -45,8 +45,8 @@ defmodule Agt.Agent do
     {:ok, message} = Conversations.create_message(prompt, conversation_id)
 
     messages = [message | messages]
+    debug(part)
 
-    log_message(message)
 
     messages
     |> Enum.reverse()
@@ -69,7 +69,7 @@ defmodule Agt.Agent do
     # FIXME: Should be transactional (?)
     for part <- parts do
       # FIXME: DRY: Should be part of the main flow (handle_call(...))
-      log_message(part)
+      debug(part)
 
       {:ok, _message} = Conversations.create_message(part, conversation_id)
     end
@@ -91,31 +91,7 @@ defmodule Agt.Agent do
     end
   end
 
-  defp log_message(%Prompt{body: body}) do
-    Logger.info("Prompt: #{body |> String.slice(0, 30) |> inspect()}...")
-  end
-
-  defp log_message(%Response{body: body}) do
-    Logger.info("Response: #{body |> String.slice(0, 30) |> inspect()}...")
-  end
-
-  defp log_message(%FunctionCall{name: name, arguments: arguments}) do
-    Logger.info("FunctionCall: name=#{name} arguments=#{inspect(arguments)}")
-  end
-
-  defp log_message(%FunctionResponse{name: name, result: result}) when is_list(result) do
-    Logger.info(
-      "FunctionResponse: name=#{name} result=#{result |> Enum.slice(0, 3) |> inspect()}"
-    )
-  end
-
-  defp log_message(%FunctionResponse{name: name, result: result}) when is_binary(result) do
-    Logger.info(
-      "FunctionResponse: name=#{name} result=#{result |> String.slice(0, 30) |> inspect()}"
-    )
-  end
-
-  defp log_message(%FunctionResponse{name: name, result: result}) do
-    Logger.info("FunctionResponse: name=#{name} result=#{inspect(result)}")
+  defp debug(part) do
+    part |> inspect(printable_limit: 48) |> Logger.info()
   end
 end

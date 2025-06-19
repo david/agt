@@ -37,8 +37,9 @@ defmodule Agt.Tools.FileWrite do
     }
   end
 
-  def call(%{path: path, content: content}) do
-    Logger.info("FileWrite: path=#{path}")
+  def call(%{path: path, content: content} = arguments) do
+    module_name = __MODULE__ |> to_string() |> String.split(".") |> List.last()
+    "#{module_name}: #{arguments |> inspect(printable_limit: 48)}" |> Logger.info()
 
     expanded_path = Path.expand(path)
 
