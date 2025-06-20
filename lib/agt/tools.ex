@@ -3,6 +3,7 @@ defmodule Agt.Tools do
   Tools for interacting with the AI
   """
 
+  alias Agt.Tools.FileDelete
   alias Agt.Tools.FileList
   alias Agt.Tools.FileRead
   alias Agt.Tools.FileWrite
@@ -14,6 +15,7 @@ defmodule Agt.Tools do
 
   def list do
     [
+      FileDelete,
       FileList,
       FileRead,
       FileWrite
