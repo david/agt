@@ -42,11 +42,11 @@ defmodule Agt.Tools.FileRead do
 
     if Enum.member?(file_list, path) do
       case File.read(path) do
-        {:error, reason} ->
-          %{error: "Failed to read file: #{reason}"}
-
         {:ok, content} ->
           content
+
+        {:error, reason} ->
+          %{error: "Failed to read file: #{reason}"}
       end
     else
       %{error: "File not found: #{path}"}
