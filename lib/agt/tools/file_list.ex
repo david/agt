@@ -28,7 +28,8 @@ defmodule Agt.Tools.FileList do
     [
       "mix.exs",
       "mix.lock"
-      | Path.wildcard("{lib,test}/**/*.{ex,exs}")
-    ]
+    ] ++
+      Path.wildcard("**/*.md") ++
+      Path.wildcard("{lib,test}/**/*.{ex,exs}")
   end
 end
