@@ -14,6 +14,10 @@ defmodule Agt.Agent do
     GenServer.start_link(__MODULE__, args)
   end
 
+  def get_conversation_id(pid) do
+    GenServer.call(pid, :get_conversation_id)
+  end
+
   def retry(pid) do
     GenServer.call(pid, :retry, 300_000)
   end
@@ -24,7 +28,13 @@ defmodule Agt.Agent do
 
   @impl true
   def init(conversation_id) do
-    {:ok, %{conversation_id: conversation_id, messages: []}}
+    {:ok,
+     %{conversation_id: conversation_id, messages: Conversations.list_messages(conversation_id)}}
+  end
+
+  @impl true
+  def handle_call(:get_conversation_id, _from, %{conversation_id: conversation_id} = state) do
+    {:reply, conversation_id, state}
   end
 
   @impl true

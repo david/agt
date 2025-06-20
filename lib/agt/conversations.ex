@@ -5,6 +5,21 @@ defmodule Agt.Conversations do
 
   @path ".agt/conversations"
 
+  def list_messages(conversation_id) do
+    path = Path.join(@path, conversation_id)
+
+    if File.dir?(path) do
+      path
+      |> File.ls!()
+      |> Enum.sort()
+      |> Stream.map(&Path.join(path, &1))
+      |> Stream.map(&read_message/1)
+      |> Enum.reverse()
+    else
+      []
+    end
+  end
+
   def create_message(message, conversation_id) do
     iodata = JSON.encode_to_iodata!(message)
 
@@ -16,6 +31,21 @@ defmodule Agt.Conversations do
 
     {:ok, message}
   end
+
+  defp read_message(path) do
+    path
+    |> File.read!()
+    |> JSON.decode!()
+    |> then(& &1 |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end) |> Map.new())
+    |> structify()
+  end
+
+  defp structify(%{type: "prompt"} = map), do: struct(Agt.Message.Prompt, map)
+  defp structify(%{type: "response"} = map), do: struct(Agt.Message.Response, map)
+  defp structify(%{type: "function_call"} = map), do: struct(Agt.Message.FunctionCall, map)
+
+  defp structify(%{type: "function_response"} = map),
+    do: struct(Agt.Message.FunctionResponse, map)
 
   defp write_message(iodata, conversation_id) do
     timestamp = DateTime.utc_now() |> DateTime.to_unix()

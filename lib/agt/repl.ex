@@ -3,10 +3,9 @@ defmodule Agt.REPL do
   Interactive REPL for chatting with the AI
   """
 
-  alias Agt.Agent
-  alias Agt.AgentSupervisor
   alias Agt.Config
   alias Agt.Message.{FunctionCall, FunctionResponse, Prompt, Response}
+  alias Agt.Session
   alias Agt.Tools
 
   @prompt " "
@@ -14,41 +13,38 @@ defmodule Agt.REPL do
   def start do
     case Config.get_api_key() do
       {:ok, _api_key} ->
-        {:ok, agent} = AgentSupervisor.start_agent()
+        display_startup_message(Session.get_startup_status())
 
-        loop(agent)
+        loop()
 
       {:error, error} ->
         IO.puts("Error: #{error}")
         IO.puts("Please set the GEMINI_API_KEY environment variable")
+
         System.halt(1)
     end
   end
 
-  defp loop(agent) do
+  defp loop do
     show_prompt()
 
     get_prompt()
-    |> send_prompt(agent)
-    |> handle_response(agent)
+    |> Session.prompt()
+    |> handle_response()
 
-    loop(agent)
+    loop()
   end
 
-  defp send_prompt(%Prompt{body: ""}, _agent), do: nil
-  defp send_prompt(%Prompt{} = prompt, agent), do: Agent.prompt([prompt], agent)
+  defp handle_response(nil), do: nil
 
-  defp handle_response(nil, _agent), do: nil
-
-  defp handle_response({:ok, response}, agent) when is_list(response) do
+  defp handle_response({:ok, response}) when is_list(response) do
     handle_text_parts(response)
-    handle_function_calls(response, agent)
+    handle_function_calls(response)
   end
 
-  defp handle_response({:error, :timeout}, agent) do
-    agent
-    |> Agent.retry()
-    |> handle_response(agent)
+  defp handle_response({:error, :timeout}) do
+    # The session genserver will handle retries
+    :ok
   end
 
   defp handle_text_parts(parts) do
@@ -58,7 +54,7 @@ defmodule Agt.REPL do
     end
   end
 
-  defp handle_function_calls(parts, agent) do
+  defp handle_function_calls(parts) do
     results =
       for(
         %{name: name, arguments: args} = part <- parts,
@@ -68,8 +64,8 @@ defmodule Agt.REPL do
 
     if Enum.any?(results) do
       results
-      |> Agent.prompt(agent)
-      |> handle_response(agent)
+      |> Session.prompt()
+      |> handle_response()
     end
   end
 
@@ -78,7 +74,7 @@ defmodule Agt.REPL do
   end
 
   defp get_prompt do
-    %Prompt{body: get_multiline_input([])}
+    [%Prompt{body: get_multiline_input([])}]
   end
 
   defp get_multiline_input(lines) do
@@ -102,6 +98,14 @@ defmodule Agt.REPL do
       # Continue collecting lines
       true ->
         get_multiline_input(lines ++ [line])
+    end
+  end
+
+  defp display_startup_message(status) do
+    case status do
+      :resumed -> IO.puts("Resuming previous conversation...")
+      {:warning, message} -> IO.puts("Warning: #{message}")
+      _ -> :ok
     end
   end
 end
