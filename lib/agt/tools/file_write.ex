@@ -44,6 +44,8 @@ defmodule Agt.Tools.FileWrite do
     expanded_path = Path.expand(path)
 
     if String.starts_with?(expanded_path, File.cwd!()) do
+      File.mkdir_p!(Path.dirname(expanded_path))
+
       case File.write(expanded_path, content) do
         {:error, reason} ->
           %{error: "Failed to write file: #{reason}"}
