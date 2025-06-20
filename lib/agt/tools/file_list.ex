@@ -25,6 +25,10 @@ defmodule Agt.Tools.FileList do
 
     __MODULE__ |> to_string() |> String.split(".") |> List.last() |> Logger.info()
 
+    get_list()
+  end
+
+  def get_list do
     [
       "mix.exs",
       "mix.lock"

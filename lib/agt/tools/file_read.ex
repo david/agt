@@ -38,7 +38,7 @@ defmodule Agt.Tools.FileRead do
     module_name = __MODULE__ |> to_string() |> String.split(".") |> List.last()
     "#{module_name}: #{arguments |> inspect(printable_limit: 48)}" |> Logger.info()
 
-    file_list = FileList.call(%{})
+    file_list = FileList.get_list()
 
     if Enum.member?(file_list, path) do
       case File.read(path) do
