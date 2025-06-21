@@ -13,9 +13,17 @@ defmodule Agt.Tools.FileRead do
 
         Expects a `path` argument, to always be provided.
 
-        Returns the content of the file as a string.
+        On success, returns an object with the following properties:
 
-        On failure, returns an object with the format `{"error": "<message>"}`.
+        - `path`: the path of the file that was read.
+        - `status`: the status of the read operation, set to `success`.
+        - `content`: the content of the file that was read.
+
+        On failure, returns an object with the following properties:
+
+        - `path`: the path of the file that was meant to be read, if it is provided as an argument.
+        - `status`: the status of the read operation, set to `failure`.
+        - `error`: a string describing the error.
       """,
       parameters: %{
         type: "object",
@@ -43,21 +51,21 @@ defmodule Agt.Tools.FileRead do
     if Enum.member?(file_list, path) do
       case File.read(path) do
         {:ok, content} ->
-          content
+          %{path: path, status: "success", content: content}
 
         {:error, reason} ->
-          %{error: "Failed to read file: #{reason}"}
+          %{path: path, status: "failure", error: "Failed to read file: #{reason}"}
       end
     else
-      %{error: "File not found: #{path}"}
+      %{path: path, status: "failure", error: "File not found"}
     end
   end
 
   def call(%{}) do
-    %{error: "Error: missing required argument `path`"}
+    %{status: "failure", error: "Error: missing required argument `path`"}
   end
 
   def call(_args) do
-    %{error: "Error: unexpected arguments. Expected `path`"}
+    %{status: "failure", error: "Error: unexpected arguments. Expected `path`"}
   end
 end

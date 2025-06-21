@@ -11,9 +11,16 @@ defmodule Agt.Tools.FileWrite do
 
         Expects a `path` and `content` argument to always be provided.
 
-        Returns the string `:ok` on success.
+        On success, returns an object with the following properties:
 
-        On failure, returns an object with the format `{"error": "<message>"}`.
+        - `path`: the path of the file that was written.
+        - `status`: the status of the write operation, set to `success`.
+
+        On failure, returns an object with the following properties:
+
+        - `path`: the path of the file that was meant to be written, if it is provided as an argument.
+        - `status`: the status of the write operation, set to `failure`.
+        - `error`: a string describing the error.
       """,
       parameters: %{
         type: "object",
@@ -48,10 +55,10 @@ defmodule Agt.Tools.FileWrite do
 
       case File.write(expanded_path, content) do
         {:error, reason} ->
-          %{error: "Failed to write file: #{reason}"}
+          %{path: path, status: "failure", error: "Failed to write file: #{reason}"}
 
-        result ->
-          result
+        :ok ->
+          %{path: path, status: "success"}
       end
     end
   end

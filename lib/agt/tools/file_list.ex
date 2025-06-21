@@ -9,7 +9,10 @@ defmodule Agt.Tools.FileList do
       description: """
         Lists all relevant project files.
 
-        Returns a list of paths relative to the project root.
+        On success, returns an object with the following properties:
+
+        - `status`: the status of the list operation, set to `success`.
+        - `files`: a list of paths relative to the project root.
       """,
       parameters: %{
         type: "object",
@@ -25,7 +28,7 @@ defmodule Agt.Tools.FileList do
 
     __MODULE__ |> to_string() |> String.split(".") |> List.last() |> Logger.info()
 
-    get_list()
+    %{status: "success", files: get_list()}
   end
 
   def get_list do
