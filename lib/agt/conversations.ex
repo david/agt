@@ -36,7 +36,7 @@ defmodule Agt.Conversations do
     path
     |> File.read!()
     |> JSON.decode!()
-    |> then(& &1 |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end) |> Map.new())
+    |> then(&(&1 |> Enum.map(fn {k, v} -> {String.to_atom(k), v} end) |> Map.new()))
     |> structify()
   end
 
