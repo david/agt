@@ -7,12 +7,20 @@ defmodule Agt.Tools.FileList do
     %{
       name: name(),
       description: """
-        Lists all relevant project files.
+        Lists all project files and directories.
+
+        Directory contents are listed recursively.
+        Directory names have a trailing slash appended.
+
+        Example:
+
+        - lib/agt/cli.ex is a file.
+        - lib/agt/tools/ is a directory.
 
         On success, returns an object with the following properties:
 
         - `status`: the status of the list operation, set to `success`.
-        - `files`: a list of paths relative to the project root.
+        - `files`: a list of all files and directories, relative to the project root.
       """,
       parameters: %{
         type: "object",
@@ -32,11 +40,9 @@ defmodule Agt.Tools.FileList do
   end
 
   def get_list do
-    [
-      "mix.exs",
-      "mix.lock"
-    ] ++
-      Path.wildcard("**/*.md") ++
-      Path.wildcard("{lib,test}/**/*.{ex,exs}")
+    {output, 0} = System.cmd("fdfind", [])
+
+    output
+    |> String.split("\n")
   end
 end
