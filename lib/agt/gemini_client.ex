@@ -9,19 +9,21 @@ defmodule Agt.GeminiClient do
 
   @base_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
 
-  def generate_content(conversation) do
+  def generate_content(conversation, rules) do
     {:ok, api_key} = Config.get_api_key()
 
     headers = [
       {"Content-Type", "application/json"}
     ]
 
-    body = %{
-      contents: Enum.map(conversation, &make_turn/1),
-      tools: %{
-        functionDeclarations: Tools.list() |> Enum.map(& &1.meta())
+    body =
+      %{
+        contents: Enum.map(conversation, &make_turn/1),
+        tools: %{
+          functionDeclarations: Tools.list() |> Enum.map(& &1.meta())
+        },
+        systemInstruction: if(rules, do: %{parts: [%{text: rules}]}, else: %{})
       }
-    }
 
     url = "#{@base_url}?key=#{api_key}"
 

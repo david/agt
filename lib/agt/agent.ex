@@ -27,9 +27,13 @@ defmodule Agt.Agent do
   end
 
   @impl true
-  def init(conversation_id) do
+  def init({conversation_id, rules}) do
     {:ok,
-     %{conversation_id: conversation_id, messages: Conversations.list_messages(conversation_id)}}
+     %{
+       conversation_id: conversation_id,
+       messages: Conversations.list_messages(conversation_id),
+       rules: rules
+     }}
   end
 
   @impl true
@@ -41,7 +45,8 @@ defmodule Agt.Agent do
   def handle_call(
         {:prompt, prompt},
         _from,
-        %{conversation_id: conversation_id, messages: messages} = state
+        %{conversation_id: conversation_id, messages: messages, rules: rules} =
+          state
       ) do
     for part <- prompt do
       {:ok, _message} = Conversations.create_message(part, conversation_id)
@@ -53,15 +58,15 @@ defmodule Agt.Agent do
 
     messages
     |> Enum.reverse()
-    |> GeminiClient.generate_content()
+    |> GeminiClient.generate_content(rules)
     |> handle_response(%{state | messages: messages})
   end
 
   @impl true
-  def handle_call(:retry, _from, %{messages: messages} = state) do
+  def handle_call(:retry, _from, %{messages: messages, rules: rules} = state) do
     messages
     |> Enum.reverse()
-    |> GeminiClient.generate_content()
+    |> GeminiClient.generate_content(rules)
     |> handle_response(state)
   end
 

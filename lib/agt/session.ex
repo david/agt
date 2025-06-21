@@ -32,15 +32,25 @@ defmodule Agt.Session do
     # Possibly through Agt.Storage?
     File.mkdir_p!(".agt")
 
+    rules = read_agent_md()
+
     {agent, startup_status} =
       if conversation_id = Marker.read() do
-        {:ok, agent} = AgentSupervisor.start_agent(conversation_id)
+        {:ok, agent} = AgentSupervisor.start_agent(conversation_id, rules)
 
-        {agent, :resumed}
+        {agent,
+         %{
+           session: :resumed,
+           rules: rules && "AGENT.md"
+         }}
       else
-        {:ok, agent} = AgentSupervisor.start_agent()
+        {:ok, agent} = AgentSupervisor.start_agent(rules)
 
-        {agent, :new}
+        {agent,
+         %{
+           session: :new,
+           rules: rules && "AGENT.md"
+         }}
       end
 
     agent |> Agent.get_conversation_id() |> Marker.create()
@@ -67,5 +77,15 @@ defmodule Agt.Session do
   @impl true
   def terminate(_reason, _state) do
     nil
+  end
+
+  defp read_agent_md do
+    case File.read("AGENT.md") do
+      {:ok, content} ->
+        content
+
+      {:error, _reason} ->
+        nil
+    end
   end
 end

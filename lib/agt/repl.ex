@@ -101,11 +101,19 @@ defmodule Agt.REPL do
     end
   end
 
-  defp display_startup_message(status) do
-    case status do
-      :resumed -> IO.puts("Resuming previous conversation...")
-      {:warning, message} -> IO.puts("Warning: #{message}")
-      _ -> :ok
+  defp display_startup_message(%{session: session, rules: rules}) do
+    if rules do
+      IO.puts("Rules loaded from #{rules}")
+    else
+      IO.puts("Rules not loaded")
+    end
+
+    case session do
+      :resumed ->
+        IO.puts("Resuming previous conversation...")
+
+      :new ->
+        IO.puts("Starting new conversation...")
     end
   end
 end
