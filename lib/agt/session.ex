@@ -41,22 +41,12 @@ defmodule Agt.Session do
     rules = read_agent_md()
     {:ok, agent} = AgentSupervisor.start_agent(conversation_id, rules)
 
-    {agent, startup_status} =
-      if crashed_conversation_id do
-        {agent,
-         %{
-           session: :resumed,
-           rules: rules && "AGENT.md"
-         }}
-      else
-        {agent,
-         %{
-           session: :new,
-           rules: rules && "AGENT.md"
-         }}
-      end
+    startup_status = %{
+      session: if(crashed_conversation_id, do: :resumed, else: :new),
+      rules: rules && "AGENT.md"
+    }
 
-    agent |> Agent.get_conversation_id() |> Marker.create()
+    Marker.create(conversation_id)
 
     {:ok, %{agent: agent, startup_status: startup_status}}
   end
