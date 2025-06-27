@@ -7,9 +7,13 @@ defmodule Agt.GeminiClient do
   alias Agt.Message.{Prompt, Response, FunctionCall, FunctionResponse}
   alias Agt.Tools
 
+  require Logger
+
   @base_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
 
-  def generate_content(conversation, rules) do
+  def generate_content(conversation) do
+    Logger.debug("Generating content for conversation: #{inspect(conversation)}")
+
     {:ok, api_key} = Config.get_api_key()
 
     headers = [
@@ -21,11 +25,12 @@ defmodule Agt.GeminiClient do
         contents: Enum.map(conversation, &make_turn/1),
         tools: %{
           functionDeclarations: Tools.list() |> Enum.map(& &1.meta())
-        },
-        systemInstruction: if(rules, do: %{parts: [%{text: rules}]}, else: %{})
+        }
       }
 
     url = "#{@base_url}?key=#{api_key}"
+
+    Logger.debug("Sending request to Gemini API: #{inspect(%{url: url, body: body})}")
 
     case Req.post(url, json: body, headers: headers, receive_timeout: 180_000) do
       {:ok, %{status: 200, body: response_body}} ->

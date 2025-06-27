@@ -7,6 +7,7 @@ defmodule Agt.Agent do
 
   alias Agt.Conversations
   alias Agt.GeminiClient
+  alias Agt.Message.Prompt
 
   require Logger
 
@@ -28,11 +29,19 @@ defmodule Agt.Agent do
 
   @impl true
   def init({conversation_id, rules}) do
+    messages =
+      case {Conversations.list_messages(conversation_id), rules} do
+        {[], r} when not is_nil(r) ->
+          [%Prompt{body: r, role: "user"}]
+
+        {messages, _} ->
+          messages
+      end
+
     {:ok,
      %{
        conversation_id: conversation_id,
-       messages: Conversations.list_messages(conversation_id),
-       rules: rules
+       messages: messages
      }}
   end
 
@@ -45,7 +54,7 @@ defmodule Agt.Agent do
   def handle_call(
         {:prompt, prompt},
         _from,
-        %{conversation_id: conversation_id, messages: messages, rules: rules} =
+        %{conversation_id: conversation_id, messages: messages} =
           state
       ) do
     for part <- prompt do
@@ -58,15 +67,15 @@ defmodule Agt.Agent do
 
     messages
     |> Enum.reverse()
-    |> GeminiClient.generate_content(rules)
+    |> GeminiClient.generate_content()
     |> handle_response(%{state | messages: messages})
   end
 
   @impl true
-  def handle_call(:retry, _from, %{messages: messages, rules: rules} = state) do
+  def handle_call(:retry, _from, %{messages: messages} = state) do
     messages
     |> Enum.reverse()
-    |> GeminiClient.generate_content(rules)
+    |> GeminiClient.generate_content()
     |> handle_response(state)
   end
 
