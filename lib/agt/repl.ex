@@ -10,7 +10,7 @@ defmodule Agt.REPL do
   alias Agt.Tools
 
   @prompt " "
-  @continuation_prompt "  "
+  @continuation_prompt " "
 
   def start do
     case Config.get_api_key() do
@@ -27,7 +27,9 @@ defmodule Agt.REPL do
 
   defp loop do
     IO.puts("")
-    input_lines = read_multiline_input([])
+    View.display_prompt(@prompt)
+
+    input_lines = read_multiline_input([], Time.utc_now())
     input = Enum.join(input_lines, "\n")
 
     if String.trim(input) != "" do
@@ -53,9 +55,12 @@ defmodule Agt.REPL do
     loop()
   end
 
-  defp read_multiline_input(lines) do
-    prompt = if Enum.empty?(lines), do: @prompt, else: @continuation_prompt
-    View.display_prompt(prompt)
+  defp read_multiline_input(lines, timestamp) do
+    now = Time.utc_now()
+
+    if Time.diff(now, timestamp, :millisecond) > 25 do
+      View.display_prompt(@continuation_prompt)
+    end
 
     line = IO.gets("") |> String.trim_trailing("\n")
 
@@ -64,7 +69,7 @@ defmodule Agt.REPL do
         lines |> Enum.take(length(lines) - 1)
 
       true ->
-        read_multiline_input(lines ++ [line])
+        read_multiline_input(lines ++ [line], now)
     end
   end
 
