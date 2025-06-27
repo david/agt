@@ -5,34 +5,67 @@ defmodule Agt.REPL do
 
   alias Agt.Config
   alias Agt.Message.{FunctionCall, FunctionResponse, Prompt, Response}
+  alias Agt.REPL.View
   alias Agt.Session
   alias Agt.Tools
 
-  @prompt " "
+  @prompt " "
+  @continuation_prompt "  "
 
   def start do
     case Config.get_api_key() do
       {:ok, _api_key} ->
         display_startup_message(Session.get_startup_status())
-
         loop()
 
       {:error, error} ->
         IO.puts("Error: #{error}")
         IO.puts("Please set the GEMINI_API_KEY environment variable")
-
         System.halt(1)
     end
   end
 
   defp loop do
-    show_prompt()
+    IO.puts("")
+    input_lines = read_multiline_input([])
+    input = Enum.join(input_lines, "\n")
 
-    get_prompt()
-    |> Session.prompt()
-    |> handle_response()
+    if String.trim(input) != "" do
+      lines_to_clear = length(input_lines) + 2
+
+      reprint_text =
+        case input_lines do
+          [first_line | rest_lines] ->
+            ([@prompt <> first_line] ++ Enum.map(rest_lines, &(@continuation_prompt <> &1)))
+            |> Enum.join("\n")
+
+          [] ->
+            ""
+        end
+
+      View.reprint_historical_prompt(reprint_text, lines_to_clear)
+
+      [%Prompt{body: input}]
+      |> Session.prompt()
+      |> handle_response()
+    end
 
     loop()
+  end
+
+  defp read_multiline_input(lines) do
+    prompt = if Enum.empty?(lines), do: @prompt, else: @continuation_prompt
+    View.display_prompt(prompt)
+
+    line = IO.gets("") |> String.trim_trailing("\n")
+
+    cond do
+      line == "" and Enum.at(lines, -1) == "" ->
+        lines |> Enum.take(length(lines) - 1)
+
+      true ->
+        read_multiline_input(lines ++ [line])
+    end
   end
 
   defp handle_response(nil), do: nil
@@ -43,7 +76,6 @@ defmodule Agt.REPL do
   end
 
   defp handle_response({:error, :timeout}) do
-    # The session genserver will handle retries
     :ok
   end
 
@@ -69,38 +101,6 @@ defmodule Agt.REPL do
     end
   end
 
-  defp show_prompt do
-    IO.write(@prompt)
-  end
-
-  defp get_prompt do
-    [%Prompt{body: get_multiline_input([])}]
-  end
-
-  defp get_multiline_input(lines) do
-    # Show continuation prompt after first line
-    prompt = if length(lines) == 0, do: "", else: "… "
-
-    line =
-      :io.get_line(:standard_io, prompt)
-      |> to_string()
-      |> String.trim_trailing("\n")
-
-    cond do
-      # Check if last two lines are empty (triple enter to send)
-      length(lines) >= 1 and line == "" and List.last(lines) == "" ->
-        lines
-        # Remove the last empty line
-        |> Enum.drop(-1)
-        |> Enum.join("\n")
-        |> String.trim()
-
-      # Continue collecting lines
-      true ->
-        get_multiline_input(lines ++ [line])
-    end
-  end
-
   defp display_startup_message(%{session: session, rules: rules}) do
     if rules do
       IO.puts("Rules loaded from #{rules}")
@@ -115,5 +115,7 @@ defmodule Agt.REPL do
       :new ->
         IO.puts("Starting new conversation...")
     end
+
+    IO.puts("---")
   end
 end
