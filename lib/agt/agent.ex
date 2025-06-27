@@ -88,18 +88,18 @@ defmodule Agt.Agent do
   defp handle_response({:error, error}, state) do
     cond do
       String.match?(error, ~r/reason: :timeout/) ->
-        Logger.info("Timeout")
+        Logger.error("Timeout")
 
         {:reply, {:error, :timeout}, state}
 
       true ->
-        Logger.info("Error: #{error}")
+        Logger.error("Error: #{error}")
 
         {:reply, {:error, error}, state}
     end
   end
 
   defp debug(part) do
-    part |> inspect(printable_limit: 48) |> Logger.info()
+    part |> inspect(printable_limit: 48) |> Logger.debug()
   end
 end

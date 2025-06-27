@@ -34,7 +34,7 @@ defmodule Agt.Tools.FileList do
     # is hardcoded, but it would be better to dynamically generate it based
     # on the project structure.
 
-    __MODULE__ |> to_string() |> String.split(".") |> List.last() |> Logger.info()
+    __MODULE__ |> to_string() |> String.split(".") |> List.last() |> Logger.debug()
 
     %{status: "success", files: get_list()}
   end

@@ -31,7 +31,7 @@ defmodule Agt.Tools.FileRead do
           path: %{
             type: "string",
             description: """
-              The path of the file to read. 
+              The path of the file to read.
 
               Must match a path returned by the `file_list` tool.
             """
@@ -44,7 +44,7 @@ defmodule Agt.Tools.FileRead do
 
   def call(%{path: path} = arguments) do
     module_name = __MODULE__ |> to_string() |> String.split(".") |> List.last()
-    "#{module_name}: #{arguments |> inspect(printable_limit: 48)}" |> Logger.info()
+    "#{module_name}: #{arguments |> inspect(printable_limit: 48)}" |> Logger.debug()
 
     file_list = FileList.get_list()
 
