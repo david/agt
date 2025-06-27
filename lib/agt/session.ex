@@ -32,20 +32,23 @@ defmodule Agt.Session do
     # Possibly through Agt.Storage?
     File.mkdir_p!(".agt")
 
+    crashed_conversation_id = Marker.read()
+
+    conversation_id =
+      crashed_conversation_id ||
+        DateTime.utc_now() |> DateTime.to_unix() |> to_string()
+
     rules = read_agent_md()
+    {:ok, agent} = AgentSupervisor.start_agent(conversation_id, rules)
 
     {agent, startup_status} =
-      if conversation_id = Marker.read() do
-        {:ok, agent} = AgentSupervisor.start_agent(conversation_id, rules)
-
+      if crashed_conversation_id do
         {agent,
          %{
            session: :resumed,
            rules: rules && "AGENT.md"
          }}
       else
-        {:ok, agent} = AgentSupervisor.start_agent(rules)
-
         {agent,
          %{
            session: :new,
