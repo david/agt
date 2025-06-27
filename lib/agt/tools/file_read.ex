@@ -13,6 +13,9 @@ defmodule Agt.Tools.FileRead do
 
         Expects a `path` argument, to always be provided.
 
+        Example:
+        `file_read(path="path/to/my_file.txt")`
+
         On success, returns an object with the following properties:
 
         - `path`: the path of the file that was read.
