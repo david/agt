@@ -48,11 +48,27 @@ defmodule Agt.REPL do
 
       View.reprint_historical_prompt(reprint_text, lines_to_clear)
 
-      Commands.send_prompt(input)
-      |> handle_response()
+      handle_input(input)
     end
 
     loop()
+  end
+
+  defp handle_input("/role " <> role_name) do
+    role_name = String.trim(role_name)
+
+    case Agt.Commands.load_role(role_name) do
+      {:ok, _} ->
+        IO.puts("Successfully loaded role: #{role_name}")
+
+      {:error, {:not_found, role_name}} ->
+        IO.puts("Error: Role not found: #{role_name}")
+    end
+  end
+
+  defp handle_input(input) do
+    Commands.send_prompt(input)
+    |> handle_response()
   end
 
   defp read_multiline_input(lines, timestamp) do

@@ -8,6 +8,7 @@ defmodule Agt.Session do
 
   alias Agt.Agent
   alias Agt.AgentSupervisor
+  alias Agt.Message.Prompt
   alias Agt.Session.Marker
 
   # Client API
@@ -24,6 +25,10 @@ defmodule Agt.Session do
     GenServer.call(__MODULE__, {:prompt, messages}, 300_000)
   end
 
+  def reset(system_prompt) do
+    GenServer.call(__MODULE__, {:reset, system_prompt})
+  end
+
   # GenServer Callbacks
 
   @impl true
@@ -33,22 +38,21 @@ defmodule Agt.Session do
     File.mkdir_p!(".agt")
 
     crashed_conversation_id = Marker.read()
-
-    conversation_id =
-      crashed_conversation_id ||
-        DateTime.utc_now() |> DateTime.to_unix() |> to_string()
-
     rules = read_agent_md()
-    {:ok, agent} = AgentSupervisor.start_agent(conversation_id, rules)
 
-    startup_status = %{
-      session: if(crashed_conversation_id, do: :resumed, else: :new),
-      rules: rules && "AGENT.md"
-    }
+    # TODO: Add a default system prompt when none is provided
+    {:ok, agent} = reset_agent(rules || "", crashed_conversation_id)
 
-    Marker.create(conversation_id)
-
-    {:ok, %{agent: agent, startup_status: startup_status}}
+    {:ok,
+     %{
+       agent: agent,
+       rules: rules,
+       startup_status: %{
+         session: if(crashed_conversation_id, do: :resumed, else: :new),
+         rules: rules && "AGENT.md"
+       },
+       system_prompt: nil
+     }}
   end
 
   @impl true
@@ -60,6 +64,25 @@ defmodule Agt.Session do
     response = Agent.prompt(parts, agent)
 
     {:reply, response, state}
+  end
+
+  def handle_call(
+        {:reset, system_prompt},
+        _from,
+        %{agent: old_agent, rules: rules} = state
+      ) do
+    GenServer.stop(old_agent)
+
+    {:ok, new_agent} = reset_agent("#{system_prompt}\n\n#{rules}")
+
+    {:reply, {:ok, new_agent}, %{state | system_prompt: system_prompt, agent: new_agent}}
+  end
+
+  defp reset_agent(system_prompt, conversation_id \\ nil) do
+    conversation_id
+    |> then(&(&1 || DateTime.utc_now() |> DateTime.to_unix() |> to_string()))
+    |> Marker.create()
+    |> AgentSupervisor.start_agent(%Prompt{body: system_prompt})
   end
 
   @impl true

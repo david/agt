@@ -9,9 +9,10 @@ defmodule Agt.GeminiClient do
 
   require Logger
 
-  @base_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
+  # TODO: Make this configurable
+  @base_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
-  def generate_content(conversation) do
+  def generate_content(conversation, %{body: system_prompt}) do
     debug(conversation)
 
     {:ok, api_key} = Config.get_api_key()
@@ -25,7 +26,8 @@ defmodule Agt.GeminiClient do
         contents: Enum.map(conversation, &make_turn/1),
         tools: %{
           functionDeclarations: Tools.list() |> Enum.map(& &1.meta())
-        }
+        },
+        systemInstruction: %{parts: [%{text: system_prompt}]}
       }
 
     url = "#{@base_url}?key=#{api_key}"
@@ -54,12 +56,13 @@ defmodule Agt.GeminiClient do
       parts: %{functionResponse: %{name: name, response: %{result: result}}}
     }
 
+  defp parse_response(%{"candidates" => [%{"finishReason" => "MALFORMED_FUNCTION_CALL"} | _]}) do
+    [%Response{body: "Malformed function call. Please try again."}]
+  end
+
   defp parse_response(%{"candidates" => [%{"content" => %{"parts" => parts}} | _]}) do
     for part <- parts, do: part |> parse_part() |> tap(&debug/1)
   end
-
-  # defp parse_response(%{"error" => error}), do: {:error, "API error: #{inspect(error)}"}
-  # defp parse_response(_), do: {:error, "Unexpected response format"}
 
   defp parse_part(%{"text" => text}), do: %Response{body: text}
 
