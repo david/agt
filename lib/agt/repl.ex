@@ -56,10 +56,13 @@ defmodule Agt.REPL do
   end
 
   defp read_input(lines \\ []) do
-    line = IO.gets("") |> String.trim_trailing("\n")
+    line = IO.gets("") |> String.trim()
 
     cond do
-      line == "" and List.first(lines) == "" ->
+      String.ends_with?(line, "..") ->
+        [line | lines]
+
+      line == "." ->
         lines
 
       true ->
