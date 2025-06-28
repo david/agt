@@ -29,7 +29,7 @@ defmodule Agt.REPL do
     IO.puts("")
     display_prompt(@prompt)
 
-    input_lines = read_multiline_input([], Time.utc_now())
+    input_lines = read_input([], Time.utc_now())
     input = Enum.join(input_lines, "\n")
 
     if String.trim(input) != "" do
@@ -70,7 +70,7 @@ defmodule Agt.REPL do
     |> handle_response()
   end
 
-  defp read_multiline_input(lines, timestamp) do
+  defp read_input(lines, timestamp) do
     now = Time.utc_now()
 
     if Time.diff(now, timestamp, :millisecond) > 25 do
@@ -84,7 +84,7 @@ defmodule Agt.REPL do
         lines |> Enum.take(length(lines) - 1)
 
       true ->
-        read_multiline_input(lines ++ [line], now)
+        read_input(lines ++ [line], now)
     end
   end
 
