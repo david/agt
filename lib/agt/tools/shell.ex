@@ -44,7 +44,7 @@ defmodule Agt.Tools.Shell do
     }
   end
 
-  def call(%{"command" => command}) when is_binary(command) do
+  def call(%{command: command}) when is_binary(command) do
     {output, status} = System.cmd("sh", ["-c", command], stderr_to_stdout: true)
     %{command: command, output: output, status: status}
   end
