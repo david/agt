@@ -10,6 +10,8 @@ defmodule Agt.Session.Marker do
   def create(conversation_id) do
     # FIXME: If multiple instances of the app are started, this will overwrite the marker file.
     File.write!(@marker_path, conversation_id)
+
+    conversation_id
   end
 
   def read do
