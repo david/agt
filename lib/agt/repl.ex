@@ -124,5 +124,7 @@ defmodule Agt.REPL do
 
   defp end_prompt() do
     IO.write(IO.ANSI.reset())
+    IO.puts("")
+    IO.puts("...")
   end
 end
