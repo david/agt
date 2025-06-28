@@ -7,6 +7,7 @@ defmodule Agt.Tools do
   alias Agt.Tools.FileList
   alias Agt.Tools.FileRead
   alias Agt.Tools.FileWrite
+  alias Agt.Tools.Shell
 
   # TODO: I imagine the `meta` functions could be implemented with some elixir magic,
   # as attributes of the `call` function. But is it worth it?
@@ -18,7 +19,8 @@ defmodule Agt.Tools do
       FileDelete,
       FileList,
       FileRead,
-      FileWrite
+      FileWrite,
+      Shell
     ]
   end
 
