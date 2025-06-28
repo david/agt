@@ -28,7 +28,7 @@ defmodule Agt.REPL do
     IO.puts("")
     display_prompt(@prompt)
 
-    input_lines = read_input([])
+    input_lines = read_input() |> Enum.reverse()
     input = Enum.join(input_lines, "\n")
 
     if String.trim(input) != "" do
@@ -69,15 +69,15 @@ defmodule Agt.REPL do
     |> handle_response()
   end
 
-  defp read_input(lines) do
+  defp read_input(lines \\ []) do
     line = IO.gets("") |> String.trim_trailing("\n")
 
     cond do
-      line == "" and Enum.at(lines, -1) == "" ->
-        lines |> Enum.take(length(lines) - 1)
+      line == "" and List.first(lines) == "" ->
+        lines
 
       true ->
-        read_input(lines ++ [line])
+        read_input([line | lines])
     end
   end
 
