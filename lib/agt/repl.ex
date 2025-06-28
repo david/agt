@@ -3,8 +3,9 @@ defmodule Agt.REPL do
   Interactive REPL for chatting with the AI
   """
 
+  alias Agt.Commands
   alias Agt.Config
-  alias Agt.Message.{FunctionCall, FunctionResponse, Prompt, Response}
+  alias Agt.Message.{FunctionCall, FunctionResponse, Response}
   alias Agt.REPL.View
   alias Agt.Session
   alias Agt.Tools
@@ -47,8 +48,7 @@ defmodule Agt.REPL do
 
       View.reprint_historical_prompt(reprint_text, lines_to_clear)
 
-      [%Prompt{body: input}]
-      |> Session.prompt()
+      Commands.send_prompt(input)
       |> handle_response()
     end
 
