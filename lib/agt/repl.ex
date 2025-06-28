@@ -10,7 +10,6 @@ defmodule Agt.REPL do
   alias Agt.Tools
 
   @prompt " "
-  @continuation_prompt " "
 
   def start do
     case Config.get_api_key() do
@@ -29,7 +28,7 @@ defmodule Agt.REPL do
     IO.puts("")
     display_prompt(@prompt)
 
-    input_lines = read_input([], Time.utc_now())
+    input_lines = read_input([])
     input = Enum.join(input_lines, "\n")
 
     if String.trim(input) != "" do
@@ -38,7 +37,7 @@ defmodule Agt.REPL do
       reprint_text =
         case input_lines do
           [first_line | rest_lines] ->
-            ([@prompt <> first_line] ++ Enum.map(rest_lines, &(@continuation_prompt <> &1)))
+            [@prompt <> first_line | rest_lines]
             |> Enum.join("\n")
 
           [] ->
@@ -70,13 +69,7 @@ defmodule Agt.REPL do
     |> handle_response()
   end
 
-  defp read_input(lines, timestamp) do
-    now = Time.utc_now()
-
-    if Time.diff(now, timestamp, :millisecond) > 25 do
-      display_prompt(@continuation_prompt)
-    end
-
+  defp read_input(lines) do
     line = IO.gets("") |> String.trim_trailing("\n")
 
     cond do
@@ -84,7 +77,7 @@ defmodule Agt.REPL do
         lines |> Enum.take(length(lines) - 1)
 
       true ->
-        read_input(lines ++ [line], now)
+        read_input(lines ++ [line])
     end
   end
 
