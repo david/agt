@@ -16,6 +16,7 @@ defmodule Agt.Tools.Shell do
       Example:
       `shell(command: "ls -l /nonexistent_directory")`
 
+      **Warning:** A call to this function without the `command` argument will fail.
       On success, returns an object with the following properties:
       - `output`: The combined standard output and standard error of the command as a single string.
       - `status`: The exit status code of the command as an integer.

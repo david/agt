@@ -14,6 +14,8 @@ defmodule Agt.Tools.FileDelete do
         Example:
         `file_delete(path="path/to/my_file.txt")`
 
+        **Warning:** A call to this function without the `path` argument will fail.
+
         On success, returns an object with the following properties:
 
         - `path`: the path of the file that was deleted.

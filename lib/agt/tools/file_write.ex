@@ -14,6 +14,9 @@ defmodule Agt.Tools.FileWrite do
         Example:
         `file_write(path="path/to/my_file.txt", content="This is the content of the file.")`
 
+        **Warning:** A call to this function without either the `path` or the `content`
+        arguments will fail.
+
         On success, returns an object with the following properties:
 
         - `path`: the path of the file that was written.
