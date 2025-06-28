@@ -26,28 +26,14 @@ defmodule Agt.REPL do
 
   defp loop do
     IO.puts("")
-    display_prompt(@prompt)
 
-    input_lines = read_input() |> Enum.reverse()
-    input = Enum.join(input_lines, "\n")
+    begin_prompt(@prompt)
 
-    if String.trim(input) != "" do
-      lines_to_clear = length(input_lines) + 2
+    input = read_input() |> Enum.reverse() |> Enum.join("\n")
 
-      reprint_text =
-        case input_lines do
-          [first_line | rest_lines] ->
-            [@prompt <> first_line | rest_lines]
-            |> Enum.join("\n")
+    end_prompt()
 
-          [] ->
-            ""
-        end
-
-      reprint_historical_prompt(reprint_text, lines_to_clear)
-
-      handle_input(input)
-    end
+    handle_input(input)
 
     loop()
   end
@@ -132,19 +118,11 @@ defmodule Agt.REPL do
     IO.puts("---")
   end
 
-  defp display_prompt(prompt) do
-    IO.write(IO.ANSI.light_white() <> prompt <> IO.ANSI.reset())
+  defp begin_prompt(prompt) do
+    IO.write(IO.ANSI.light_black() <> prompt)
   end
 
-  defp reprint_historical_prompt(submitted_text, lines_to_clear) do
-    IO.write(
-      # Clear screen from cursor to end
-      IO.ANSI.cursor_up(lines_to_clear) <>
-        "\e[J" <>
-        IO.ANSI.light_black() <>
-        submitted_text <>
-        IO.ANSI.reset() <>
-        "\n"
-    )
+  defp end_prompt() do
+    IO.write(IO.ANSI.reset())
   end
 end
