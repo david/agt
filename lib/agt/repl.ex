@@ -6,7 +6,6 @@ defmodule Agt.REPL do
   alias Agt.Commands
   alias Agt.Config
   alias Agt.Message.{FunctionCall, FunctionResponse, Response}
-  alias Agt.REPL.View
   alias Agt.Session
   alias Agt.Tools
 
@@ -28,7 +27,7 @@ defmodule Agt.REPL do
 
   defp loop do
     IO.puts("")
-    View.display_prompt(@prompt)
+    display_prompt(@prompt)
 
     input_lines = read_multiline_input([], Time.utc_now())
     input = Enum.join(input_lines, "\n")
@@ -46,7 +45,7 @@ defmodule Agt.REPL do
             ""
         end
 
-      View.reprint_historical_prompt(reprint_text, lines_to_clear)
+      reprint_historical_prompt(reprint_text, lines_to_clear)
 
       handle_input(input)
     end
@@ -75,7 +74,7 @@ defmodule Agt.REPL do
     now = Time.utc_now()
 
     if Time.diff(now, timestamp, :millisecond) > 25 do
-      View.display_prompt(@continuation_prompt)
+      display_prompt(@continuation_prompt)
     end
 
     line = IO.gets("") |> String.trim_trailing("\n")
@@ -138,5 +137,21 @@ defmodule Agt.REPL do
     end
 
     IO.puts("---")
+  end
+
+  defp display_prompt(prompt) do
+    IO.write(IO.ANSI.light_white() <> prompt <> IO.ANSI.reset())
+  end
+
+  defp reprint_historical_prompt(submitted_text, lines_to_clear) do
+    IO.write(
+      # Clear screen from cursor to end
+      IO.ANSI.cursor_up(lines_to_clear) <>
+        "\e[J" <>
+        IO.ANSI.light_black() <>
+        submitted_text <>
+        IO.ANSI.reset() <>
+        "\n"
+    )
   end
 end
