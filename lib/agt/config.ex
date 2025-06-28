@@ -15,4 +15,12 @@ defmodule Agt.Config do
         {:ok, key}
     end
   end
+
+  @doc """
+  Retrieves the Gemini model name from the application environment.
+  Defaults to "gemini-2.5-flash" if not configured.
+  """
+  def get_model do
+    {:ok, Application.get_env(:agt, :model, "gemini-2.5-flash")}
+  end
 end

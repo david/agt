@@ -9,13 +9,8 @@ defmodule Agt.GeminiClient do
 
   require Logger
 
-  # TODO: Make this configurable
-  @base_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
-
   def generate_content(conversation, %{body: system_prompt}) do
     debug(conversation)
-
-    {:ok, api_key} = Config.get_api_key()
 
     headers = [
       {"Content-Type", "application/json"}
@@ -30,9 +25,7 @@ defmodule Agt.GeminiClient do
         systemInstruction: %{parts: [%{text: system_prompt}]}
       }
 
-    url = "#{@base_url}?key=#{api_key}"
-
-    case Req.post(url, json: body, headers: headers, receive_timeout: 180_000) do
+    case Req.post(url(), json: body, headers: headers, receive_timeout: 180_000) do
       {:ok, %{status: 200, body: response_body}} ->
         {:ok, parse_response(response_body)}
 
@@ -76,6 +69,14 @@ defmodule Agt.GeminiClient do
         end)
         |> Enum.into(%{})
     }
+
+  defp url do
+    {:ok, api_key} = Config.get_api_key()
+    {:ok, model_name} = Config.get_model()
+
+    "https://generativelanguage.googleapis.com/v1beta/models/#{model_name}:" <>
+      "generateContent?key=#{api_key}"
+  end
 
   defp debug(conversation) when is_list(conversation) do
     conversation
