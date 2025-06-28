@@ -59,8 +59,6 @@ defmodule Agt.Agent do
       ) do
     for part <- prompt do
       {:ok, _message} = Conversations.create_message(part, conversation_id)
-
-      debug(part)
     end
 
     messages = prompt ++ messages
@@ -86,8 +84,6 @@ defmodule Agt.Agent do
     # FIXME: Should be transactional (?)
     for part <- parts do
       # FIXME: DRY: Should be part of the main flow (handle_call(...))
-      debug(part)
-
       {:ok, _message} = Conversations.create_message(part, conversation_id)
     end
 
@@ -106,9 +102,5 @@ defmodule Agt.Agent do
 
         {:reply, {:error, error}, state}
     end
-  end
-
-  defp debug(part) do
-    part |> inspect(printable_limit: 48) |> Logger.debug()
   end
 end

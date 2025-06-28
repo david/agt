@@ -12,7 +12,7 @@ defmodule Agt.GeminiClient do
   @base_url "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent"
 
   def generate_content(conversation) do
-    Logger.debug("Generating content for conversation: #{inspect(conversation)}")
+    debug(conversation)
 
     {:ok, api_key} = Config.get_api_key()
 
@@ -29,8 +29,6 @@ defmodule Agt.GeminiClient do
       }
 
     url = "#{@base_url}?key=#{api_key}"
-
-    Logger.debug("Sending request to Gemini API: #{inspect(%{url: url, body: body})}")
 
     case Req.post(url, json: body, headers: headers, receive_timeout: 180_000) do
       {:ok, %{status: 200, body: response_body}} ->
@@ -57,7 +55,7 @@ defmodule Agt.GeminiClient do
     }
 
   defp parse_response(%{"candidates" => [%{"content" => %{"parts" => parts}} | _]}) do
-    for part <- parts, do: parse_part(part)
+    for part <- parts, do: part |> parse_part() |> tap(&debug/1)
   end
 
   # defp parse_response(%{"error" => error}), do: {:error, "API error: #{inspect(error)}"}
@@ -75,4 +73,17 @@ defmodule Agt.GeminiClient do
         end)
         |> Enum.into(%{})
     }
+
+  defp debug(conversation) when is_list(conversation) do
+    conversation
+    |> Enum.reverse()
+    |> List.first()
+    |> debug()
+  end
+
+  defp debug(part) do
+    part
+    |> inspect(printable_limit: 48)
+    |> Logger.debug()
+  end
 end
