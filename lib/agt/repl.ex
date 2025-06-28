@@ -122,8 +122,32 @@ defmodule Agt.REPL do
 
   defp begin_prompt(prompt) do
     IO.write("\e]133;A\a" <> IO.ANSI.light_black())
+
     {:ok, columns} = :io.columns()
-    "─" |> String.duplicate(columns) |> IO.puts()
+
+    %{total_tokens: total_tokens, max_tokens: max_tokens} = Session.get_meta()
+
+    max_tokens_display =
+      case max_tokens do
+        :unknown -> "???"
+        limit -> limit
+      end
+
+    token_display =
+      "┤ 󰃬 #{total_tokens}/#{max_tokens_display} ├"
+
+    token_display_length = String.length(token_display)
+
+    ruler_length = columns
+    remaining_space = ruler_length - token_display_length
+
+    left_dashes = floor(remaining_space / 2)
+    right_dashes = ceil(remaining_space / 2)
+
+    ruler_line =
+      String.duplicate("─", left_dashes) <> token_display <> String.duplicate("─", right_dashes)
+
+    IO.puts(ruler_line)
     IO.write(prompt <> "\e]133;B\a")
   end
 

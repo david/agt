@@ -17,6 +17,10 @@ defmodule Agt.Session do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
+  def get_meta do
+    GenServer.call(__MODULE__, :get_meta)
+  end
+
   def get_startup_status do
     GenServer.call(__MODULE__, :get_startup_status)
   end
@@ -53,6 +57,11 @@ defmodule Agt.Session do
        },
        system_prompt: nil
      }}
+  end
+
+  @impl true
+  def handle_call(:get_meta, _from, %{agent: agent} = state) do
+    {:reply, Agent.get_meta(agent), state}
   end
 
   @impl true

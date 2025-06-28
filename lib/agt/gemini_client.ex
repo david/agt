@@ -27,7 +27,9 @@ defmodule Agt.GeminiClient do
 
     case Req.post(url(), json: body, headers: headers, receive_timeout: 180_000) do
       {:ok, %{status: 200, body: response_body}} ->
-        {:ok, parse_response(response_body)}
+        parsed_response = parse_response(response_body)
+        total_token_count = get_in(response_body, ["usageMetadata", "totalTokenCount"])
+        {:ok, parsed_response, %{total_tokens: total_token_count}}
 
       {:ok, %{status: status, body: body}} ->
         {:error, "API request failed with status #{status}: #{inspect(body)}"}

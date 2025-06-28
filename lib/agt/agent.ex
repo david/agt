@@ -7,6 +7,8 @@ defmodule Agt.Agent do
 
   alias Agt.Conversations
   alias Agt.GeminiClient
+  alias Agt.Config
+  alias Agt.ModelSpecification
 
   require Logger
 
@@ -26,13 +28,21 @@ defmodule Agt.Agent do
     GenServer.call(pid, {:prompt, prompt}, 300_000)
   end
 
+  def get_meta(pid) do
+    GenServer.call(pid, :get_meta)
+  end
+
   @impl true
   def init({conversation_id, system_prompt}) do
+    {:ok, model_name} = Config.get_model()
+
     {:ok,
      %{
        system_prompt: system_prompt,
        conversation_id: conversation_id,
-       messages: Conversations.list_messages(conversation_id)
+       messages: Conversations.list_messages(conversation_id),
+       total_tokens: 0,
+       model_name: model_name
      }}
   end
 
@@ -68,9 +78,18 @@ defmodule Agt.Agent do
     |> handle_response(state)
   end
 
+  @impl true
+  def handle_call(:get_meta, _from, %{total_tokens: count, model_name: model} = state) do
+    {:reply,
+     model
+     |> ModelSpecification.get_spec()
+     |> Map.merge(%{total_tokens: count, model_name: model}), state}
+  end
+
   defp handle_response(
-         {:ok, parts},
-         %{conversation_id: conversation_id, messages: messages} = state
+         {:ok, parts, %{total_tokens: total_tokens}},
+         %{conversation_id: conversation_id, messages: messages, total_tokens: current_tokens} =
+           state
        ) do
     # FIXME: Should be transactional (?)
     for part <- parts do
@@ -78,7 +97,8 @@ defmodule Agt.Agent do
       {:ok, _message} = Conversations.create_message(part, conversation_id)
     end
 
-    {:reply, {:ok, parts}, %{state | messages: parts ++ messages}}
+    {:reply, {:ok, parts},
+     %{state | messages: parts ++ messages, total_tokens: current_tokens + total_tokens}}
   end
 
   defp handle_response({:error, error}, state) do
