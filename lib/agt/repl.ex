@@ -26,7 +26,6 @@ defmodule Agt.REPL do
 
   defp loop do
     IO.puts("")
-
     begin_prompt(@prompt)
 
     input = read_input() |> Enum.reverse() |> Enum.join("\n")
@@ -122,11 +121,14 @@ defmodule Agt.REPL do
   end
 
   defp begin_prompt(prompt) do
-    IO.write(IO.ANSI.light_black() <> prompt)
+    IO.write("\e]133;A\a" <> IO.ANSI.light_black())
+    {:ok, columns} = :io.columns()
+    "─" |> String.duplicate(columns) |> IO.puts()
+    IO.write(prompt <> "\e]133;B\a")
   end
 
   defp end_prompt() do
-    IO.write(IO.ANSI.reset())
+    IO.write(IO.ANSI.reset() <> "\e]133;C\a")
     IO.puts("")
     IO.puts("...")
   end
