@@ -72,26 +72,47 @@ See `mix.exs` for dependencies.
 ## Key Design Patterns
 
 ### Agent Lifecycle
-1. Agent started via `Agt.AgentSupervisor.start_agent()`
-2. Conversations persisted to filesystem in `.agt/conversations/` directory
-3. Each message timestamped and stored as JSON
-4. Stateful conversation maintained in GenServer state
+1.  **Session Management (`Agt.Session`)**: The `Agt.Session` GenServer is the primary entry point for managing the agent's lifecycle. It is responsible for:
+    *   Starting and supervising the `Agt.Agent` process using `Agt.AgentSupervisor`.
+    *   Reading and applying the `AGENT.md` file content as a system prompt at startup.
+    *   Handling session markers via `Agt.Session.Marker` to support crash recovery and resume previous conversations. A marker file (`.agt/active_session`) stores the `conversation_id` of the active session.
+    *   Providing client API for prompting the agent (`Agt.Session.prompt/1`) and resetting the session (`Agt.Session.reset/1`).
+2.  **Agent Process (`Agt.Agent`)**: The `Agt.Agent` GenServer holds the state of a single AI agent conversation. Key responsibilities include:
+    *   Maintaining the conversation history (`messages`).
+    *   Interacting with the `Agt.GeminiClient` to send messages to the Gemini API and receive responses.
+    *   Storing conversation messages persistently using `Agt.Conversations`.
+    *   Tracking token usage for the conversation.
+3.  **Conversation Persistence (`Agt.Conversations`)**:
+    *   Conversations are persisted to the filesystem in the `.agt/conversations/` directory.
+    *   Each message is timestamped and stored as a separate JSON file within a conversation-specific subdirectory. This ensures a chronological and recoverable conversation history.
 
 ### Message Flow
-1. User input → `Agt.Message.Prompt`
-2. Stored to conversation
-3. Sent to Gemini API via `Agt.GeminiClient`
-4. Gemini API may respond with a request to call a function.
-5. The tool is executed and the result is sent back to the Gemini API.
-6. Response → `Agt.Message.Response`
-7. Stored to conversation
-8. Returned to user
+The communication between the user, the agent, and the Gemini API follows a well-defined flow:
+
+1.  **User Input**: User input is received by the REPL and converted into an `Agt.Message.Prompt` struct.
+2.  **Message Storage**: The `Agt.Message.Prompt` is immediately stored to the conversation history via `Agt.Conversations.create_message/2`.
+3.  **Gemini API Request**: The `Agt.Agent` collects the current conversation history and the system prompt, then sends it to the Gemini API using `Agt.GeminiClient.generate_content/2`.
+4.  **Gemini API Response Processing**:
+    *   The Gemini API responds with either a text-based message (`Agt.Message.Response`) or a request to execute a tool function (`Agt.Message.FunctionCall`).
+    *   If a `FunctionCall` is received, the agent invokes the specified tool function (see "Tooling Integration" below).
+    *   The result of the tool execution is then sent back to the Gemini API as an `Agt.Message.FunctionResponse`.
+    *   This cycle (Gemini API -> Tool Call -> Gemini API with Tool Result) can repeat until the Gemini API provides a final text response.
+5.  **Response Storage**: The final `Agt.Message.Response` (or `FunctionCall`/`FunctionResponse` during tool use) is stored to the conversation history.
+6.  **Return to User**: The agent's response is returned to the user through the REPL.
+
+### Tooling Integration
+1.  **Tool Definition**: Tools are defined as Elixir modules under the `Agt.Tools` namespace (e.g., `Agt.Tools.FileRead`). Each tool module implements:
+    *   `name/0`: Returns the string name of the tool.
+    *   `meta/0`: Returns a map describing the tool's capabilities and expected arguments, following the Gemini API's function declaration format.
+    *   `call/1`: Executes the tool's logic, accepting a map of arguments.
+2.  **Tool Listing**: The `Agt.Tools` module provides `list/0` to retrieve a list of all available tool modules.
+3.  **Tool Execution**: When the Gemini API requests a tool call, `Agt.Tools.call/2` is used to dynamically dispatch the call to the appropriate tool module, passing the provided arguments. The result of the tool execution is then incorporated back into the conversation with the Gemini API.
 
 ### Error Handling
-- Config validation for API keys
-- HTTP request timeout handling
-- Graceful API error responses
-- File system error handling for conversation storage
+*   **Configuration Validation**: `Agt.Config` handles validation of environment variables like `GEMINI_API_KEY`.
+*   **HTTP Request Handling**: `Agt.GeminiClient` handles HTTP request timeouts and gracefully processes various API error responses (e.g., malformed function calls, network issues).
+*   **File System Errors**: `Agt.Conversations` and `Agt.Session.Marker` include error handling for file system operations, such as directory creation and file read/write operations.
+*   **GenServer Supervision**: The use of `DynamicSupervisor` (`Agt.AgentSupervisor`) ensures fault tolerance. If an `Agt.Agent` process crashes, it can be restarted, and the session can be recovered using the session marker.
 
 ## Testing
 - Use ExUnit for testing
