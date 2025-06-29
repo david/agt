@@ -7,10 +7,9 @@ defmodule Agt.REPL do
   alias Agt.Config
   alias Agt.Message.{FunctionCall, FunctionResponse, Response}
   alias Agt.REPL.InputParser
+  alias Agt.REPL.Prompt
   alias Agt.Session
   alias Agt.Tools
-
-  @prompt " "
 
   def start do
     case Config.get_api_key() do
@@ -27,7 +26,7 @@ defmodule Agt.REPL do
 
   defp loop do
     IO.puts("")
-    begin_prompt(@prompt)
+    begin_prompt()
 
     # Read the first line of input
     first_line = IO.gets("")
@@ -136,40 +135,22 @@ defmodule Agt.REPL do
     IO.puts("---")
   end
 
-  defp begin_prompt(prompt) do
-    IO.write("\e]133;A\a" <> IO.ANSI.light_black())
-
+  defp begin_prompt() do
     {:ok, columns} = :io.columns()
 
     %{total_tokens: total_tokens, max_tokens: max_tokens} = Session.get_meta()
 
-    max_tokens_display =
-      case max_tokens do
-        :unknown -> "???"
-        limit -> limit
-      end
+    case Prompt.format(total_tokens, max_tokens, columns) do
+      {:ok, prompt_string} ->
+        IO.write(prompt_string)
 
-    token_display =
-      "┤ 󰃬 #{total_tokens}/#{max_tokens_display} ├"
-
-    token_display_length = String.length(token_display)
-
-    ruler_length = columns
-    remaining_space = ruler_length - token_display_length
-
-    left_dashes = floor(remaining_space / 2)
-    right_dashes = ceil(remaining_space / 2)
-
-    ruler_line =
-      String.duplicate("─", left_dashes) <> token_display <> String.duplicate("─", right_dashes)
-
-    IO.puts(ruler_line)
-    IO.write(prompt <> "\e]133;B\a")
+      {:error, :column_width_too_small} ->
+        # Fallback for very small terminals where ruler cannot be displayed
+        IO.write(Prompt.format_fallback())
+    end
   end
 
   defp end_prompt() do
-    IO.write(IO.ANSI.reset() <> "\e]133;C\a")
-    IO.puts("")
-    IO.puts("...")
+    IO.write(Prompt.format_end_prompt())
   end
 end
