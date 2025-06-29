@@ -6,6 +6,7 @@ defmodule Agt.REPL do
   alias Agt.Commands
   alias Agt.Config
   alias Agt.Message.{FunctionCall, FunctionResponse, Response}
+  alias Agt.REPL.InputParser
   alias Agt.Session
   alias Agt.Tools
 
@@ -28,13 +29,43 @@ defmodule Agt.REPL do
     IO.puts("")
     begin_prompt(@prompt)
 
-    input = read_input() |> Enum.reverse() |> Enum.join("\n")
+    # Read the first line of input
+    first_line = IO.gets("")
 
-    end_prompt()
+    case InputParser.parse_first_line(first_line) do
+      {:single_line, prompt} ->
+        end_prompt()
+        handle_input(prompt)
+        loop()
 
-    handle_input(input)
+      {:multi_line_start, initial_line_content} ->
+        # Start collecting multi-line input
+        case collect_multi_line([initial_line_content]) do
+          :ignore ->
+            loop()
 
-    loop()
+          prompt ->
+            end_prompt()
+            handle_input(prompt)
+            loop()
+        end
+
+      :ignore ->
+        loop()
+    end
+  end
+
+  defp collect_multi_line(current_lines) do
+    # No prompt for continuation lines
+    line = IO.gets("")
+
+    case InputParser.parse_continuation_line(line, current_lines) do
+      {:continue, updated_lines} ->
+        collect_multi_line(updated_lines)
+
+      {:finished, final_prompt} ->
+        final_prompt
+    end
   end
 
   defp handle_input("/role " <> role_name) do
@@ -52,21 +83,6 @@ defmodule Agt.REPL do
   defp handle_input(input) do
     Commands.send_prompt(input)
     |> handle_response()
-  end
-
-  defp read_input(lines \\ []) do
-    line = IO.gets("") |> String.trim()
-
-    cond do
-      String.ends_with?(line, "..") ->
-        [line | lines]
-
-      line == "." ->
-        lines
-
-      true ->
-        read_input([line | lines])
-    end
   end
 
   defp handle_response(nil), do: nil
