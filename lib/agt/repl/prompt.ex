@@ -57,11 +57,11 @@ defmodule Agt.REPL.Prompt do
 
       # Construct the full prompt string including ANSI codes
       full_prompt =
-        "\e]133;A\a" <>
+        Agt.ANSI.prompt_start() <>
           IO.ANSI.light_black() <>
           ruler_line <>
           "\n" <>
-          @prompt_char <> "\e]133;B\a"
+          @prompt_char <> Agt.ANSI.command_start()
 
       {:ok, full_prompt}
     end
@@ -71,13 +71,14 @@ defmodule Agt.REPL.Prompt do
   Formats a simple fallback REPL prompt for terminals with insufficient column width.
   """
   def format_fallback() do
-    "\e]133;A\a" <> IO.ANSI.light_black() <> "─ REPL ─\n" <> @prompt_char <> "\e]133;B\a"
+    Agt.ANSI.prompt_start() <>
+      IO.ANSI.light_black() <> "─ REPL ─\n" <> @prompt_char <> Agt.ANSI.command_start()
   end
 
   @doc """
   Formats the end-of-prompt marker, including ANSI reset and the '...' indicator.
   """
   def format_end_prompt() do
-    IO.ANSI.reset() <> "\e]133;C\a" <> "\n" <> "..."
+    IO.ANSI.reset() <> Agt.ANSI.command_end() <> "\n" <> "..."
   end
 end

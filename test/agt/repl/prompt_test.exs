@@ -27,11 +27,11 @@ defmodule Agt.REPL.PromptTest do
         String.duplicate("─", left_dashes) <> token_display <> String.duplicate("─", right_dashes)
 
       expected_prompt =
-        "\e]133;A\a" <>
+        Agt.ANSI.prompt_start() <>
           IO.ANSI.light_black() <>
           expected_ruler_part <>
           "\n" <>
-          " " <> "\e]133;B\a"
+          " " <> Agt.ANSI.command_start()
 
       {:ok, actual_prompt} = Prompt.format(total_tokens, max_tokens, columns)
 
@@ -61,11 +61,11 @@ defmodule Agt.REPL.PromptTest do
         String.duplicate("─", left_dashes) <> token_display <> String.duplicate("─", right_dashes)
 
       expected_prompt =
-        "\e]133;A\a" <>
+        Agt.ANSI.prompt_start() <>
           IO.ANSI.light_black() <>
           expected_ruler_part <>
           "\n" <>
-          " " <> "\e]133;B\a"
+          " " <> Agt.ANSI.command_start()
 
       {:ok, actual_prompt} = Prompt.format(total_tokens, max_tokens, columns)
 
@@ -104,11 +104,11 @@ defmodule Agt.REPL.PromptTest do
         String.duplicate("─", left_dashes) <> token_display <> String.duplicate("─", right_dashes)
 
       expected_prompt =
-        "\e]133;A\a" <>
+        Agt.ANSI.prompt_start() <>
           IO.ANSI.light_black() <>
           expected_ruler_part <>
           "\n" <>
-          " " <> "\e]133;B\a"
+          " " <> Agt.ANSI.command_start()
 
       {:ok, actual_prompt} = Prompt.format(total_tokens, max_tokens, columns)
       assert actual_prompt == expected_prompt
@@ -137,11 +137,11 @@ defmodule Agt.REPL.PromptTest do
         String.duplicate("─", left_dashes) <> token_display <> String.duplicate("─", right_dashes)
 
       expected_prompt =
-        "\e]133;A\a" <>
+        Agt.ANSI.prompt_start() <>
           IO.ANSI.light_black() <>
           expected_ruler_part <>
           "\n" <>
-          " " <> "\e]133;B\a"
+          " " <> Agt.ANSI.command_start()
 
       {:ok, actual_prompt} = Prompt.format(total_tokens, max_tokens, columns)
       assert actual_prompt == expected_prompt
@@ -150,14 +150,17 @@ defmodule Agt.REPL.PromptTest do
 
   describe "format_fallback/0" do
     test "returns the correct fallback prompt string" do
-      expected_fallback_prompt = "\e]133;A\a" <> IO.ANSI.light_black() <> "─ REPL ─\n" <> " " <> "\e]133;B\a"
+      expected_fallback_prompt =
+        Agt.ANSI.prompt_start() <>
+          IO.ANSI.light_black() <> "─ REPL ─\n" <> " " <> Agt.ANSI.command_start()
+
       assert Prompt.format_fallback() == expected_fallback_prompt
     end
   end
 
   describe "format_end_prompt/0" do
     test "returns the correct end-of-prompt marker string" do
-      expected_end_prompt = IO.ANSI.reset() <> "\e]133;C\a" <> "\n" <> "..."
+      expected_end_prompt = IO.ANSI.reset() <> Agt.ANSI.command_end() <> "\n" <> "..."
       assert Prompt.format_end_prompt() == expected_end_prompt
     end
   end
