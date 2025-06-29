@@ -21,7 +21,7 @@ defmodule Agt.Commands do
   @spec send_prompt(String.t()) :: {:ok, list()} | {:error, :timeout}
   def send_prompt(input) do
     [%Prompt{body: input}]
-    |> Session.prompt()
+    |> Session.send_prompt()
   end
 
   def load_role(name) do

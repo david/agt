@@ -25,8 +25,8 @@ defmodule Agt.Session do
     GenServer.call(__MODULE__, :get_startup_status)
   end
 
-  def prompt(messages) do
-    GenServer.call(__MODULE__, {:prompt, messages}, 300_000)
+  def send_prompt(messages) do
+    GenServer.call(__MODULE__, {:send_prompt, messages}, 300_000)
   end
 
   def reset(system_prompt) do
@@ -69,8 +69,8 @@ defmodule Agt.Session do
     {:reply, state.startup_status, state}
   end
 
-  def handle_call({:prompt, parts}, _from, %{agent: agent} = state) do
-    response = Agent.prompt(parts, agent)
+  def handle_call({:send_prompt, parts}, _from, %{agent: agent} = state) do
+    response = Agent.send_prompt(parts, agent)
 
     {:reply, response, state}
   end

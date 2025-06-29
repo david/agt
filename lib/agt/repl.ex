@@ -112,7 +112,7 @@ defmodule Agt.REPL do
 
     if Enum.any?(results) do
       results
-      |> Session.prompt()
+      |> Session.send_prompt()
       |> handle_response()
     end
   end
