@@ -11,7 +11,14 @@ defmodule Agt.REPL do
   alias Agt.Session
   alias Agt.Tools
 
-  def start do
+  def child_spec(opts) do
+    %{
+      id: Agt.REPL,
+      start: {Agt.REPL, :start, opts}
+    }
+  end
+
+  def start(_) do
     case Config.get_api_key() do
       {:ok, _api_key} ->
         display_startup_message(Session.get_startup_status())

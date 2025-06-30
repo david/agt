@@ -6,7 +6,8 @@ defmodule Agt.Application do
   def start(_type, _args) do
     children = [
       {Agt.AgentSupervisor, name: Agt.AgentSupervisor},
-      {Agt.Session, name: Agt.Session}
+      {Agt.Session, name: Agt.Session},
+      {Agt.REPL, name: Agt.REPL}
     ]
 
     opts = [strategy: :one_for_one, name: Agt.Supervisor]
