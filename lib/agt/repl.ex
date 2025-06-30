@@ -138,8 +138,6 @@ defmodule Agt.REPL do
       :new ->
         IO.puts("Starting new conversation...")
     end
-
-    IO.puts("---")
   end
 
   defp begin_prompt() do
