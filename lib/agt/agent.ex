@@ -5,7 +5,6 @@ defmodule Agt.Agent do
 
   use GenServer
 
-  alias Agt.Conversations
   alias Agt.GeminiClient
   alias Agt.Config
   alias Agt.ModelSpecification
@@ -14,10 +13,6 @@ defmodule Agt.Agent do
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args)
-  end
-
-  def get_conversation_id(pid) do
-    GenServer.call(pid, :get_conversation_id)
   end
 
   def retry(pid) do
@@ -33,33 +28,25 @@ defmodule Agt.Agent do
   end
 
   @impl true
-  def init({conversation_id, system_prompt}) do
+  def init({messages, system_prompt}) do
     {:ok, model_name} = Config.get_model()
 
     {:ok,
      %{
        system_prompt: system_prompt,
-       conversation_id: conversation_id,
-       messages: Conversations.list_messages(conversation_id),
+       messages: messages,
        total_tokens: 0,
        model_name: model_name
      }}
   end
 
   @impl true
-  def handle_call(:get_conversation_id, _from, %{conversation_id: conversation_id} = state) do
-    {:reply, conversation_id, state}
-  end
-
-  @impl true
   def handle_call(
         {:send_prompt, prompt},
         _from,
-        %{conversation_id: conversation_id, messages: messages, system_prompt: system_prompt} =
+        %{messages: messages, system_prompt: system_prompt} =
           state
       ) do
-    for part <- prompt, do: {:ok, _message} = Conversations.create_message(part, conversation_id)
-
     messages = prompt ++ messages
 
     messages
@@ -86,15 +73,9 @@ defmodule Agt.Agent do
 
   defp handle_response(
          {:ok, parts, %{total_tokens: total_tokens}},
-         %{conversation_id: conversation_id, messages: messages, total_tokens: current_tokens} =
+         %{messages: messages, total_tokens: current_tokens} =
            state
        ) do
-    # FIXME: Should be transactional (?)
-    for part <- parts do
-      # FIXME: DRY: Should be part of the main flow (handle_call(...))
-      {:ok, _message} = Conversations.create_message(part, conversation_id)
-    end
-
     {:reply, {:ok, parts},
      %{state | messages: parts ++ messages, total_tokens: current_tokens + total_tokens}}
   end
