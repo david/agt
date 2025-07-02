@@ -87,7 +87,7 @@ defmodule Agt.REPL do
   end
 
   defp handle_input(input) do
-    Commands.send_prompt(input)
+    Commands.send_messages(input)
     |> handle_response()
   end
 
@@ -119,7 +119,7 @@ defmodule Agt.REPL do
 
     if Enum.any?(results) do
       results
-      |> Session.send_prompt()
+      |> Session.send_messages()
       |> handle_response()
     end
   end

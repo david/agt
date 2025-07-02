@@ -18,10 +18,10 @@ defmodule Agt.Commands do
     - `{:ok, response}`: The response from the session.
     - `{:error, :timeout}`: If the session times out.
   """
-  @spec send_prompt(String.t()) :: {:ok, list()} | {:error, :timeout}
-  def send_prompt(input) do
+  @spec send_messages(String.t()) :: {:ok, list()} | {:error, :timeout}
+  def send_messages(input) do
     [%UserMessage{body: input}]
-    |> Session.send_prompt()
+    |> Session.send_messages()
   end
 
   def load_role(name) do

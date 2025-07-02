@@ -19,8 +19,8 @@ defmodule Agt.Agent do
     GenServer.call(pid, :retry, 300_000)
   end
 
-  def send_prompt(prompt, pid) when is_list(prompt) do
-    GenServer.call(pid, {:send_prompt, prompt}, 300_000)
+  def send_messages(messages, pid) when is_list(messages) do
+    GenServer.call(pid, {:send_messages, messages}, 300_000)
   end
 
   def get_meta(pid) do
@@ -41,7 +41,7 @@ defmodule Agt.Agent do
   end
 
   @impl true
-  def handle_call({:send_prompt, user_messages}, _from, state) do
+  def handle_call({:send_messages, user_messages}, _from, state) do
     %{messages: old_messages, system_prompt: system_prompt} = state
 
     messages = concat_messages(user_messages, old_messages)
