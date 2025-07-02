@@ -3,7 +3,7 @@ defmodule Agt.Commands do
   This module is responsible for handling user-facing commands.
   """
 
-  alias Agt.Message.Prompt
+  alias Agt.Message.UserMessage
   alias Agt.Session
 
   @doc """
@@ -20,7 +20,7 @@ defmodule Agt.Commands do
   """
   @spec send_prompt(String.t()) :: {:ok, list()} | {:error, :timeout}
   def send_prompt(input) do
-    [%Prompt{body: input}]
+    [%UserMessage{body: input}]
     |> Session.send_prompt()
   end
 

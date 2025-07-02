@@ -10,7 +10,7 @@ agt/
 │   ├── agent.ex             # Main Agent GenServer
 │   ├── agent_supervisor.ex  # Agent supervision
 │   ├── application.ex       # OTP Application
-│   ├── cli.ex               # Command line interface  
+│   ├── cli.ex               # Command line interface
 │   ├── config.ex            # Configuration management
 │   ├── conversations.ex     # Conversation persistence
 │   ├── gemini_client.ex     # Google Gemini API client
@@ -89,15 +89,15 @@ See `mix.exs` for dependencies.
 ### Message Flow
 The communication between the user, the agent, and the Gemini API follows a well-defined flow:
 
-1.  **User Input**: User input is received by the REPL and converted into an `Agt.Message.Prompt` struct.
-2.  **Message Storage**: The `Agt.Message.Prompt` is immediately stored to the conversation history via `Agt.Conversations.create_message/2`.
+1.  **User Input**: User input is received by the REPL and converted into an `Agt.Message.UserMessage` struct.
+2.  **Message Storage**: The `Agt.Message.UserMessage` is immediately stored to the conversation history via `Agt.Conversations.create_message/2`.
 3.  **Gemini API Request**: The `Agt.Agent` collects the current conversation history and the system prompt, then sends it to the Gemini API using `Agt.GeminiClient.generate_content/2`.
 4.  **Gemini API Response Processing**:
-    *   The Gemini API responds with either a text-based message (`Agt.Message.Response`) or a request to execute a tool function (`Agt.Message.FunctionCall`).
+    *   The Gemini API responds with either a text-based message (`Agt.Message.ModelMessage`) or a request to execute a tool function (`Agt.Message.FunctionCall`).
     *   If a `FunctionCall` is received, the agent invokes the specified tool function (see "Tooling Integration" below).
     *   The result of the tool execution is then sent back to the Gemini API as an `Agt.Message.FunctionResponse`.
     *   This cycle (Gemini API -> Tool Call -> Gemini API with Tool Result) can repeat until the Gemini API provides a final text response.
-5.  **Response Storage**: The final `Agt.Message.Response` (or `FunctionCall`/`FunctionResponse` during tool use) is stored to the conversation history.
+5.  **Response Storage**: The final `Agt.Message.ModelMessage` (or `FunctionCall`/`FunctionResponse` during tool use) is stored to the conversation history.
 6.  **Return to User**: The agent's response is returned to the user through the REPL.
 
 ### Tooling Integration

@@ -8,7 +8,7 @@ defmodule Agt.Session do
 
   alias Agt.Agent
   alias Agt.AgentSupervisor
-  alias Agt.Message.Prompt
+  alias Agt.Message.UserMessage
   alias Agt.Session.Marker
 
   # Client API
@@ -91,7 +91,7 @@ defmodule Agt.Session do
     conversation_id
     |> then(&(&1 || DateTime.utc_now() |> DateTime.to_unix() |> to_string()))
     |> Marker.create()
-    |> AgentSupervisor.start_agent(%Prompt{body: system_prompt})
+    |> AgentSupervisor.start_agent(%UserMessage{body: system_prompt})
   end
 
   @impl true

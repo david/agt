@@ -1,10 +1,10 @@
 defmodule Agt.Message do
-  defmodule Prompt do
+  defmodule UserMessage do
     @derive {JSON.Encoder, only: [:body, :role, :type]}
     defstruct [:body, role: "user", type: "prompt"]
   end
 
-  defmodule Response do
+  defmodule ModelMessage do
     @derive {JSON.Encoder, only: [:body, :role, :type]}
     defstruct [:body, role: "model", type: "response"]
   end

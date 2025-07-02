@@ -4,7 +4,7 @@ defmodule Agt.GeminiClient do
   """
 
   alias Agt.Config
-  alias Agt.Message.{Prompt, Response, FunctionCall, FunctionResponse}
+  alias Agt.Message.{UserMessage, ModelMessage, FunctionCall, FunctionResponse}
   alias Agt.Tools
 
   require Logger
@@ -39,8 +39,8 @@ defmodule Agt.GeminiClient do
     end
   end
 
-  defp make_turn(%Prompt{body: body}), do: %{role: "user", parts: %{text: body}}
-  defp make_turn(%Response{body: body}), do: %{role: "model", parts: %{text: body}}
+  defp make_turn(%UserMessage{body: body}), do: %{role: "user", parts: %{text: body}}
+  defp make_turn(%ModelMessage{body: body}), do: %{role: "model", parts: %{text: body}}
 
   defp make_turn(%FunctionCall{name: name, arguments: _args}),
     do: %{role: "function_call", parts: %{functionCall: %{name: name, args: %{}}}}
@@ -52,14 +52,14 @@ defmodule Agt.GeminiClient do
     }
 
   defp parse_response(%{"candidates" => [%{"finishReason" => "MALFORMED_FUNCTION_CALL"} | _]}) do
-    [%Response{body: "Malformed function call. Please try again."}]
+    [%ModelMessage{body: "Malformed function call. Please try again."}]
   end
 
   defp parse_response(%{"candidates" => [%{"content" => %{"parts" => parts}} | _]}) do
     for part <- parts, do: part |> parse_part() |> tap(&debug/1)
   end
 
-  defp parse_part(%{"text" => text}), do: %Response{body: text}
+  defp parse_part(%{"text" => text}), do: %ModelMessage{body: text}
 
   defp parse_part(%{"functionCall" => %{"name" => name, "args" => args}}),
     do: %FunctionCall{

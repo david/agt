@@ -40,8 +40,8 @@ defmodule Agt.Conversations do
     |> structify()
   end
 
-  defp structify(%{type: "prompt"} = map), do: struct(Agt.Message.Prompt, map)
-  defp structify(%{type: "response"} = map), do: struct(Agt.Message.Response, map)
+  defp structify(%{type: "prompt"} = map), do: struct(Agt.Message.UserMessage, map)
+  defp structify(%{type: "response"} = map), do: struct(Agt.Message.ModelMessage, map)
   defp structify(%{type: "function_call"} = map), do: struct(Agt.Message.FunctionCall, map)
 
   defp structify(%{type: "function_response"} = map),

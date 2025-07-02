@@ -5,7 +5,7 @@ defmodule Agt.REPL do
 
   alias Agt.Commands
   alias Agt.Config
-  alias Agt.Message.{FunctionCall, FunctionResponse, Response}
+  alias Agt.Message.{FunctionCall, FunctionResponse, ModelMessage}
   alias Agt.REPL.InputParser
   alias Agt.REPL.Prompt
   alias Agt.Session
@@ -103,7 +103,7 @@ defmodule Agt.REPL do
   end
 
   defp handle_text_parts(parts) do
-    for %{body: body} = part <- parts, match?(%Response{}, part), String.trim(body) != "" do
+    for %{body: body} = part <- parts, match?(%ModelMessage{}, part), String.trim(body) != "" do
       IO.puts("")
       IO.puts(body)
     end
