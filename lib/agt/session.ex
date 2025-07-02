@@ -85,11 +85,9 @@ defmodule Agt.Session do
     {:reply, {:ok, model_messages}, state}
   end
 
-  def handle_call(
-        {:reset, system_prompt},
-        _from,
-        %{agent: old_agent, rules: rules} = state
-      ) do
+  def handle_call({:reset, system_prompt}, _from, state) do
+    %{agent: old_agent, rules: rules} = state
+
     GenServer.stop(old_agent)
 
     {:ok, new_agent} = reset_agent("#{system_prompt}\n\n#{rules}")

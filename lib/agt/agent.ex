@@ -41,12 +41,9 @@ defmodule Agt.Agent do
   end
 
   @impl true
-  def handle_call(
-        {:send_prompt, prompt},
-        _from,
-        %{messages: messages, system_prompt: system_prompt} =
-          state
-      ) do
+  def handle_call({:send_prompt, prompt}, _from, state) do
+    %{messages: messages, system_prompt: system_prompt} = state
+
     messages = prompt ++ messages
 
     messages
@@ -71,11 +68,9 @@ defmodule Agt.Agent do
      |> Map.merge(%{total_tokens: count, model_name: model}), state}
   end
 
-  defp handle_response(
-         {:ok, parts, %{total_tokens: total_tokens}},
-         %{messages: messages, total_tokens: current_tokens} =
-           state
-       ) do
+  defp handle_response({:ok, parts, %{total_tokens: total_tokens}}, state) do
+    %{messages: messages, total_tokens: current_tokens} = state
+
     {:reply, {:ok, parts},
      %{state | messages: parts ++ messages, total_tokens: current_tokens + total_tokens}}
   end
