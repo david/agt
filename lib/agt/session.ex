@@ -41,18 +41,19 @@ defmodule Agt.Session do
     # Possibly through Agt.Storage?
     File.mkdir_p!(".agt")
 
-    crashed_conversation_id = Marker.read()
+    {conversation_state, conversation_id} = read_conversation_id()
     rules = read_agent_md()
 
     # TODO: Add a default system prompt when none is provided
-    {:ok, agent} = reset_agent(rules || "", crashed_conversation_id)
+    {:ok, agent} = reset_agent(rules || "", conversation_id)
 
     {:ok,
      %{
        agent: agent,
+       conversation_id: conversation_id,
        rules: rules,
        startup_status: %{
-         session: if(crashed_conversation_id, do: :resumed, else: :new),
+         session: conversation_state,
          rules: rules && "AGENT.md"
        },
        system_prompt: nil
@@ -88,10 +89,7 @@ defmodule Agt.Session do
   end
 
   defp reset_agent(system_prompt, conversation_id \\ nil) do
-    conversation_id
-    |> then(&(&1 || DateTime.utc_now() |> DateTime.to_unix() |> to_string()))
-    |> Marker.create()
-    |> AgentSupervisor.start_agent(%UserMessage{body: system_prompt})
+    AgentSupervisor.start_agent(conversation_id, %UserMessage{body: system_prompt})
   end
 
   @impl true
@@ -111,6 +109,14 @@ defmodule Agt.Session do
 
       {:error, _reason} ->
         nil
+    end
+  end
+
+  defp read_conversation_id() do
+    if conversation_id = Marker.read() do
+      {:resumed, conversation_id}
+    else
+      {:new, DateTime.utc_now() |> DateTime.to_unix() |> to_string() |> Marker.write()}
     end
   end
 end
