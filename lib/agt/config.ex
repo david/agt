@@ -21,6 +21,6 @@ defmodule Agt.Config do
   Defaults to "gemini-2.5-flash" if not configured.
   """
   def get_model do
-    {:ok, Application.get_env(:agt, :model, "gemini-2.5-flash")}
+    {:ok, Application.get_env(:agt, :model, "gemini-2.5-pro")}
   end
 end
