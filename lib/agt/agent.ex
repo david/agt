@@ -68,11 +68,11 @@ defmodule Agt.Agent do
      |> Map.merge(%{total_tokens: count, model_name: model}), state}
   end
 
-  defp handle_response({:ok, parts, %{total_tokens: total_tokens}}, state) do
+  defp handle_response({:ok, model_messages, %{total_tokens: total_tokens}}, state) do
     %{messages: messages, total_tokens: current_tokens} = state
 
-    {:reply, {:ok, parts},
-     %{state | messages: parts ++ messages, total_tokens: current_tokens + total_tokens}}
+    {:reply, {:ok, model_messages},
+     %{state | messages: model_messages ++ messages, total_tokens: current_tokens + total_tokens}}
   end
 
   defp handle_response({:error, error}, state) do
