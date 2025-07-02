@@ -41,10 +41,10 @@ defmodule Agt.Agent do
   end
 
   @impl true
-  def handle_call({:send_prompt, prompt}, _from, state) do
-    %{messages: messages, system_prompt: system_prompt} = state
+  def handle_call({:send_prompt, user_messages}, _from, state) do
+    %{messages: old_messages, system_prompt: system_prompt} = state
 
-    messages = prompt ++ messages
+    messages = concat_messages(user_messages, old_messages)
 
     messages
     |> Enum.reverse()
@@ -68,11 +68,13 @@ defmodule Agt.Agent do
      |> Map.merge(%{total_tokens: count, model_name: model}), state}
   end
 
-  defp handle_response({:ok, model_messages, %{total_tokens: total_tokens}}, state) do
-    %{messages: messages, total_tokens: current_tokens} = state
+  defp handle_response({:ok, model_messages, %{total_tokens: response_total_tokens}}, state) do
+    %{messages: old_messages, total_tokens: current_tokens} = state
 
-    {:reply, {:ok, model_messages},
-     %{state | messages: model_messages ++ messages, total_tokens: current_tokens + total_tokens}}
+    messages = concat_messages(model_messages, old_messages)
+    total_tokens = current_tokens + response_total_tokens
+
+    {:reply, {:ok, model_messages}, %{state | messages: messages, total_tokens: total_tokens}}
   end
 
   defp handle_response({:error, error}, state) do
@@ -88,4 +90,7 @@ defmodule Agt.Agent do
         {:reply, {:error, error}, state}
     end
   end
+
+  defp concat_messages(new_messages, old_messages),
+    do: new_messages |> Enum.reverse() |> Kernel.++(old_messages)
 end
