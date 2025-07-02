@@ -58,9 +58,7 @@ defmodule Agt.Agent do
         %{conversation_id: conversation_id, messages: messages, system_prompt: system_prompt} =
           state
       ) do
-    for part <- prompt do
-      {:ok, _message} = Conversations.create_message(part, conversation_id)
-    end
+    for part <- prompt, do: {:ok, _message} = Conversations.create_message(part, conversation_id)
 
     messages = prompt ++ messages
 
