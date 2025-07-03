@@ -5,6 +5,7 @@ defmodule Agt.Agent do
 
   use GenServer
 
+  alias Agt.Conversations
   alias Agt.GeminiClient
   alias Agt.Config
   alias Agt.ModelSpecification
@@ -28,13 +29,14 @@ defmodule Agt.Agent do
   end
 
   @impl true
-  def init({messages, system_prompt}) do
+  def init({conversation_id, system_prompt}) do
     {:ok, model_name} = Config.get_model()
 
     {:ok,
      %{
        system_prompt: system_prompt,
-       messages: messages,
+       conversation_id: conversation_id,
+       messages: Conversations.list_messages(conversation_id),
        total_tokens: 0,
        model_name: model_name
      }}
@@ -42,7 +44,11 @@ defmodule Agt.Agent do
 
   @impl true
   def handle_call({:send_messages, user_messages}, _from, state) do
-    %{messages: old_messages, system_prompt: system_prompt} = state
+    %{conversation_id: conversation_id, messages: old_messages, system_prompt: system_prompt} =
+      state
+
+    for part <- user_messages,
+        do: {:ok, _message} = Conversations.create_message(part, conversation_id)
 
     messages = concat_messages(user_messages, old_messages)
 
@@ -69,7 +75,11 @@ defmodule Agt.Agent do
   end
 
   defp handle_response({:ok, model_messages, %{total_tokens: response_total_tokens}}, state) do
-    %{messages: old_messages, total_tokens: current_tokens} = state
+    %{conversation_id: conversation_id, messages: old_messages, total_tokens: current_tokens} =
+      state
+
+    for part <- model_messages,
+        do: {:ok, _message} = Conversations.create_message(part, conversation_id)
 
     messages = concat_messages(model_messages, old_messages)
     total_tokens = current_tokens + response_total_tokens

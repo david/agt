@@ -7,7 +7,6 @@ defmodule Agt.Session do
   use GenServer
 
   alias Agt.Agent
-  alias Agt.Conversations
   alias Agt.AgentSupervisor
   alias Agt.Message.UserMessage
   alias Agt.Session.Marker
@@ -71,16 +70,8 @@ defmodule Agt.Session do
     {:reply, state.startup_status, state}
   end
 
-  def handle_call({:send_messages, user_messages}, _from, state) do
-    %{agent: agent, conversation_id: conversation_id} = state
-
-    for part <- user_messages,
-        do: {:ok, _message} = Conversations.create_message(part, conversation_id)
-
+  def handle_call({:send_messages, user_messages}, _from, %{agent: agent} = state) do
     {:ok, model_messages} = Agent.send_messages(user_messages, agent)
-
-    for part <- model_messages,
-        do: {:ok, _message} = Conversations.create_message(part, conversation_id)
 
     {:reply, {:ok, model_messages}, state}
   end
@@ -96,10 +87,7 @@ defmodule Agt.Session do
   end
 
   defp reset_agent(system_prompt, conversation_id \\ nil) do
-    AgentSupervisor.start_agent(
-      Conversations.list_messages(conversation_id),
-      %UserMessage{body: system_prompt}
-    )
+    AgentSupervisor.start_agent(conversation_id, %UserMessage{body: system_prompt})
   end
 
   @impl true
