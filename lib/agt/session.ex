@@ -68,9 +68,13 @@ defmodule Agt.Session do
   end
 
   def handle_call({:send_messages, user_messages}, _from, %{agent: agent} = state) do
-    {:ok, model_messages} = Agent.send_messages(user_messages, agent)
+    case Agent.send_messages(user_messages, agent) do
+      {:ok, model_messages} ->
+        {:reply, {:ok, model_messages}, state}
 
-    {:reply, {:ok, model_messages}, state}
+      {:error, :timeout} = error ->
+        {:reply, error, state}
+    end
   end
 
   def handle_call({:reset, system_prompt}, _from, state) do
