@@ -50,7 +50,6 @@ defmodule Agt.Session do
     {:ok,
      %{
        agent: agent,
-       conversation_id: conversation_id,
        rules: rules,
        startup_status: %{
          session: conversation_state,
