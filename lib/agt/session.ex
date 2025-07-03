@@ -9,7 +9,6 @@ defmodule Agt.Session do
   alias Agt.Agent
   alias Agt.AgentSupervisor
   alias Agt.Message.UserMessage
-  alias Agt.Session.Marker
 
   # Client API
 
@@ -41,7 +40,7 @@ defmodule Agt.Session do
     # Possibly through Agt.Storage?
     File.mkdir_p!(".agt")
 
-    {conversation_state, conversation_id} = read_conversation_id()
+    conversation_id = get_conversation_id()
     rules = read_agent_md()
 
     # TODO: Add a default system prompt when none is provided
@@ -52,7 +51,6 @@ defmodule Agt.Session do
        agent: agent,
        rules: rules,
        startup_status: %{
-         session: conversation_state,
          rules: rules && "AGENT.md"
        },
        system_prompt: nil
@@ -80,18 +78,13 @@ defmodule Agt.Session do
 
     GenServer.stop(old_agent)
 
-    {:ok, new_agent} = reset_agent("#{system_prompt}\n\n#{rules}")
+    {:ok, new_agent} = reset_agent("#{system_prompt}\n\n#{rules}", get_conversation_id())
 
     {:reply, {:ok, new_agent}, %{state | system_prompt: system_prompt, agent: new_agent}}
   end
 
-  defp reset_agent(system_prompt, conversation_id \\ nil) do
+  defp reset_agent(system_prompt, conversation_id) do
     AgentSupervisor.start_agent(conversation_id, %UserMessage{body: system_prompt})
-  end
-
-  @impl true
-  def terminate(reason, _state) when reason in [:normal, :shutdown] do
-    Marker.delete()
   end
 
   @impl true
@@ -109,11 +102,7 @@ defmodule Agt.Session do
     end
   end
 
-  defp read_conversation_id() do
-    if conversation_id = Marker.read() do
-      {:resumed, conversation_id}
-    else
-      {:new, DateTime.utc_now() |> DateTime.to_unix() |> to_string() |> Marker.write()}
-    end
+  defp get_conversation_id() do
+    DateTime.utc_now() |> DateTime.to_unix() |> to_string()
   end
 end
