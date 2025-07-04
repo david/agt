@@ -12,8 +12,10 @@ defmodule Agt.Agent do
 
   require Logger
 
-  def start_link(args) do
-    GenServer.start_link(__MODULE__, args)
+  def start_link({conversation_id, _system_prompt} = args) do
+    GenServer.start_link(__MODULE__, args,
+      name: {:via, Registry, {Agt.AgentRegistry, conversation_id}}
+    )
   end
 
   def retry(pid) do

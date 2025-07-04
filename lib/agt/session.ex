@@ -43,12 +43,12 @@ defmodule Agt.Session do
     conversation_id = get_conversation_id()
     rules = read_agent_md()
 
-    # TODO: Add a default system prompt when none is provided
-    {:ok, agent} = reset_agent(rules || "", conversation_id)
+    # TODO: Add a default system prompt when none is provided?
+    reset_agent(rules || "", conversation_id)
 
     {:ok,
      %{
-       agent: agent,
+       conversation_id: conversation_id,
        rules: rules,
        startup_status: %{
          rules: rules && "AGENT.md"
@@ -58,7 +58,9 @@ defmodule Agt.Session do
   end
 
   @impl true
-  def handle_call(:get_meta, _from, %{agent: agent} = state) do
+  def handle_call(:get_meta, _from, %{conversation_id: conversation_id} = state) do
+    [{agent, _}] = Registry.lookup(Agt.AgentRegistry, conversation_id)
+
     {:reply, Agent.get_meta(agent), state}
   end
 
@@ -67,7 +69,11 @@ defmodule Agt.Session do
     {:reply, state.startup_status, state}
   end
 
-  def handle_call({:send_messages, user_messages}, _from, %{agent: agent} = state) do
+  def handle_call({:send_messages, user_messages}, _from, state) do
+    %{conversation_id: conversation_id} = state
+
+    [{agent, _}] = Registry.lookup(Agt.AgentRegistry, conversation_id)
+
     case Agent.send_messages(user_messages, agent) do
       {:ok, model_messages} ->
         {:reply, {:ok, model_messages}, state}
@@ -78,17 +84,17 @@ defmodule Agt.Session do
   end
 
   def handle_call({:reset, system_prompt}, _from, state) do
-    %{agent: old_agent, rules: rules} = state
+    %{conversation_id: conversation_id} = state
+
+    [{old_agent, _}] = Registry.lookup(Agt.AgentRegistry, conversation_id)
 
     GenServer.stop(old_agent)
 
-    {:ok, new_agent} = reset_agent("#{system_prompt}\n\n#{rules}", get_conversation_id())
-
-    {:reply, {:ok, new_agent}, %{state | system_prompt: system_prompt, agent: new_agent}}
+    {:reply, {:ok, nil}, %{state | system_prompt: system_prompt}}
   end
 
   defp reset_agent(system_prompt, conversation_id) do
-    AgentSupervisor.start_agent(conversation_id, %UserMessage{body: system_prompt})
+    {:ok, _pid} = AgentSupervisor.start_agent(conversation_id, %UserMessage{body: system_prompt})
   end
 
   @impl true

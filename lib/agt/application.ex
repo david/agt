@@ -5,6 +5,7 @@ defmodule Agt.Application do
 
   def start(_type, _args) do
     children = [
+      {Registry, keys: :unique, name: Agt.AgentRegistry},
       {Agt.AgentSupervisor, name: Agt.AgentSupervisor},
       {Agt.Session, name: Agt.Session},
       {Agt.REPL, name: Agt.REPL}
