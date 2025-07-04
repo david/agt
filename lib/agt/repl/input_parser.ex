@@ -4,6 +4,9 @@ defmodule Agt.REPL.InputParser do
   and extracting the final prompt content.
   """
 
+  @multiline_marker_regex_start ~r{^\s*\|}
+  @multiline_marker_regex_end ~r{[|:]\s*$}
+
   @doc """
   Parses the first line of user input to determine the input mode.
 
@@ -16,11 +19,11 @@ defmodule Agt.REPL.InputParser do
     stripped_line = String.trim_trailing(line, "\n")
 
     cond do
-      String.starts_with?(stripped_line, "|") ->
+      String.match?(stripped_line, @multiline_marker_regex_start) ->
         processed_line = String.trim_leading(stripped_line, "|")
         {:multi_line_start, processed_line}
 
-      String.ends_with?(stripped_line, "|") ->
+      String.match?(stripped_line, @multiline_marker_regex_end) ->
         processed_line = String.trim_trailing(stripped_line, "|")
         {:multi_line_start, processed_line}
 
