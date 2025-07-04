@@ -16,7 +16,8 @@ defmodule Agt.Tools.FileRead do
         Example:
         `file_read(path="path/to/my_file.txt")`
 
-        **Warning:** A call to this function without the `path` argument will fail.
+        **Warning:** A call to this function without the `path` argument will result in failure!
+        NEVER do something like `file_read()` (with no arguments)!
 
         On success, returns an object with the following properties:
 
