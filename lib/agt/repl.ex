@@ -2,6 +2,7 @@ defmodule Agt.REPL do
   @moduledoc """
   Interactive REPL for chatting with the AI
   """
+  use GenServer
 
   alias Agt.Commands
   alias Agt.Config
@@ -11,28 +12,30 @@ defmodule Agt.REPL do
   alias Agt.Session
   alias Agt.Tools
 
-  def child_spec(opts) do
-    %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, opts}
-    }
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, [], opts)
   end
 
-  def start_link() do
+  @impl true
+  def init(_opts) do
     case Config.get_api_key() do
       {:ok, _api_key} ->
         display_startup_message(Session.get_startup_status())
 
-        {:ok, spawn_link(__MODULE__, :loop, [])}
+        send(self(), :prompt)
+
+        {:ok, %{}}
 
       {:error, error} ->
         IO.puts("Error: #{error}")
         IO.puts("Please set the GEMINI_API_KEY environment variable")
-        {:error, error}
+
+        {:stop, error}
     end
   end
 
-  def loop do
+  @impl true
+  def handle_info(:prompt, state) do
     IO.puts("")
     begin_prompt()
 
@@ -43,23 +46,25 @@ defmodule Agt.REPL do
       {:single_line, prompt} ->
         end_prompt()
         handle_input(prompt)
-        loop()
+        send(self(), :prompt)
 
       {:multi_line_start, initial_line_content} ->
         # Start collecting multi-line input
         case collect_multi_line([initial_line_content]) do
           :ignore ->
-            loop()
+            send(self(), :prompt)
 
           prompt ->
             end_prompt()
             handle_input(prompt)
-            loop()
+            send(self(), :prompt)
         end
 
       :ignore ->
-        loop()
+        send(self(), :prompt)
     end
+
+    {:noreply, state}
   end
 
   defp collect_multi_line(current_lines) do

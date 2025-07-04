@@ -8,7 +8,7 @@ defmodule Agt.Application do
       {Registry, keys: :unique, name: Agt.AgentRegistry},
       {Agt.AgentSupervisor, name: Agt.AgentSupervisor},
       {Agt.Session, name: Agt.Session},
-      Agt.REPL
+      {Agt.REPL, name: Agt.REPL}
     ]
 
     opts = [strategy: :one_for_one, name: Agt.Supervisor]
