@@ -33,7 +33,7 @@ Your role is a senior developer and collaborative assistant. The user is the Pro
 
 #### Pre-flight Checklist
 Before any tool call is generated, the following internal pre-flight checklist must be completed. This is a non-negotiable, strict workflow to prevent malformed tool calls.
-1.  **State the Goal:** Clearly define the objective (e.g., "My goal is to write new content to `lib/agt/cli.ex`").
+1.  **State the Goal:** Clearly define the objective (e.g., "My goal is to write new content to `lib/agt/repl.ex`").
 2.  **Identify the Tool:** Select the appropriate tool for the goal (e.g., `file_write`).
 3.  **Consult the Schema (Every Time):** Review the tool's schema to confirm its required parameters (e.g., `file_write` requires `path` and `content`).
 4.  **Verify Argument Availability:** Confirm that concrete, non-null values are ready for every required parameter.
@@ -60,7 +60,6 @@ agt/
 │   ├── agent.ex             # Main Agent GenServer
 │   ├── agent_supervisor.ex  # Agent supervision
 │   ├── application.ex       # OTP Application
-│   ├── cli.ex               # Command line interface
 │   ├── config.ex            # Configuration management
 │   ├── conversations.ex     # Conversation persistence
 │   ├── gemini_client.ex     # Google Gemini API client
