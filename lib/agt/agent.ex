@@ -5,9 +5,9 @@ defmodule Agt.Agent do
 
   use GenServer
 
+  alias Agt.Config
   alias Agt.Conversations
   alias Agt.GeminiClient
-  alias Agt.Config
   alias Agt.ModelSpecification
 
   require Logger
