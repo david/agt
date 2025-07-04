@@ -29,12 +29,13 @@ Before any tool call is generated, the following internal pre-flight checklist m
 6.  **Generate the Call:** Only after all previous steps are successfully completed, generate the tool call with all required parameters explicitly provided.
 
 ### Coding Workflow
-After I approve a plan for file modifications, and before you signal completion of the task, you must perform the following steps:
+After I approve a plan for file modifications, and before you signal completion of the task, you must perform the following steps in a batched manner:
 
-1.  **Compile:** Ensure the project compiles without errors or warnings using `mix compile --warnings-as-errors`.
-2.  **Test:** Ensure all tests pass using `mix test`.
-3.  **Format:** Ensure code is correctly formatted using `mix format`.
-4.  **Update AGENT.md:** If your changes affect the project's structure, architecture, dependencies, or key workflows, update the relevant sections of `AGENT.md` to reflect those changes.
+1.  **Execute Modifications:** Execute all planned file modification tool calls (e.g., `file_write`) in a single batch.
+2.  **Verify Changes:** Following the modifications, run a single shell command to compile, test, and format the code in one atomic step: `mix compile --warnings-as-errors && mix test && mix format`.
+3.  **Update AGENT.md:** If your changes affect the project's structure, architecture, dependencies, or key workflows, update the relevant sections of `AGENT.md` to reflect those changes.
+
+This batched workflow significantly increases efficiency and ensures that verification steps are performed together.
 
 #### Adherence to Minimal, Task-Focused Modifications
 *   **Isolate the Core Task:** Before generating a plan, re-read the user's last instruction and summarize it as a single, precise goal. For example: "Change the conversation ID generation from timestamp-based to random-hash-based."
