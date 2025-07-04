@@ -13,25 +13,26 @@ defmodule Agt.REPL do
 
   def child_spec(opts) do
     %{
-      id: Agt.REPL,
-      start: {Agt.REPL, :start, opts}
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, opts}
     }
   end
 
-  def start(_) do
+  def start_link() do
     case Config.get_api_key() do
       {:ok, _api_key} ->
         display_startup_message(Session.get_startup_status())
-        loop()
+
+        {:ok, spawn_link(__MODULE__, :loop, [])}
 
       {:error, error} ->
         IO.puts("Error: #{error}")
         IO.puts("Please set the GEMINI_API_KEY environment variable")
-        System.halt(1)
+        {:error, error}
     end
   end
 
-  defp loop do
+  def loop do
     IO.puts("")
     begin_prompt()
 
