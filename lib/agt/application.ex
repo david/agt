@@ -4,6 +4,10 @@ defmodule Agt.Application do
   use Application
 
   def start(_type, _args) do
+    # TODO:Several places know about the .agt directory. This should be centralized.
+    # Possibly through Agt.Storage?
+    File.mkdir_p!(".agt")
+
     children = [
       {Registry, keys: :unique, name: Agt.AgentRegistry},
       {Agt.AgentSupervisor, name: Agt.AgentSupervisor},

@@ -36,10 +36,6 @@ defmodule Agt.Session do
 
   @impl true
   def init(conversation_id) do
-    # TODO:Several places know about the .agt directory. This should be centralized.
-    # Possibly through Agt.Storage?
-    File.mkdir_p!(".agt")
-
     rules = read_agent_md()
 
     # TODO: Add a default system prompt when none is provided?
