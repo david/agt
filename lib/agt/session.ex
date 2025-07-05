@@ -20,10 +20,6 @@ defmodule Agt.Session do
     GenServer.call(__MODULE__, :get_meta)
   end
 
-  def get_startup_status do
-    GenServer.call(__MODULE__, :get_startup_status)
-  end
-
   def send_messages(messages) do
     GenServer.call(__MODULE__, {:send_messages, messages}, 300_000)
   end
@@ -43,9 +39,6 @@ defmodule Agt.Session do
      %{
        conversation_id: conversation_id,
        rules: rules,
-       startup_status: %{
-         rules: rules && "AGENT.md"
-       },
        system_prompt: nil
      }}
   end
@@ -55,11 +48,6 @@ defmodule Agt.Session do
     [{agent, _}] = Registry.lookup(Agt.AgentRegistry, conversation_id)
 
     {:reply, Agent.get_meta(agent), state}
-  end
-
-  @impl true
-  def handle_call(:get_startup_status, _from, state) do
-    {:reply, state.startup_status, state}
   end
 
   def handle_call({:send_messages, user_messages}, _from, state) do

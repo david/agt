@@ -3,16 +3,20 @@ defmodule Agt.Application do
 
   use Application
 
+  @rules_path "AGENT.md"
+
   def start(_type, _args) do
     # TODO:Several places know about the .agt directory. This should be centralized.
     # Possibly through Agt.Storage?
     File.mkdir_p!(".agt")
 
+    rules = read_agent_md()
+
     children = [
       {Registry, keys: :unique, name: Agt.AgentRegistry},
       {Agt.AgentSupervisor, name: Agt.AgentSupervisor},
-      {Agt.Session, {{generate_conversation_id(), read_agent_md()}, name: Agt.Session}},
-      {Agt.REPL, name: Agt.REPL}
+      {Agt.Session, {{generate_conversation_id(), rules}, name: Agt.Session}},
+      {Agt.REPL, {%{rules: rules && @rules_path}, name: Agt.REPL}}
     ]
 
     opts = [strategy: :one_for_one, name: Agt.Supervisor]
@@ -25,7 +29,7 @@ defmodule Agt.Application do
   end
 
   defp read_agent_md do
-    case File.read("AGENT.md") do
+    case File.read(@rules_path) do
       {:ok, content} ->
         content
 

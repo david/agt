@@ -12,15 +12,15 @@ defmodule Agt.REPL do
   alias Agt.Session
   alias Agt.Tools
 
-  def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, [], opts)
+  def start_link({args, opts}) do
+    GenServer.start_link(__MODULE__, args, opts)
   end
 
   @impl true
-  def init(_opts) do
+  def init(opts) do
     case Config.get_api_key() do
       {:ok, _api_key} ->
-        display_startup_message(Session.get_startup_status())
+        display_startup_message(opts)
 
         send(self(), :prompt)
 
@@ -130,13 +130,8 @@ defmodule Agt.REPL do
     end
   end
 
-  defp display_startup_message(%{rules: rules}) do
-    if rules do
-      IO.puts("Rules loaded from #{rules}")
-    else
-      IO.puts("Rules not loaded")
-    end
-  end
+  defp display_startup_message(%{rules: nil}), do: IO.puts("Rules not loaded")
+  defp display_startup_message(%{rules: rules}), do: IO.puts("Rules loaded from #{rules}")
 
   defp begin_prompt() do
     {:ok, columns} = :io.columns()
