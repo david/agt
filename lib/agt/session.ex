@@ -12,8 +12,8 @@ defmodule Agt.Session do
 
   # Client API
 
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  def start_link({conversation_id, opts}) do
+    GenServer.start_link(__MODULE__, conversation_id, opts)
   end
 
   def get_meta do
@@ -35,12 +35,11 @@ defmodule Agt.Session do
   # GenServer Callbacks
 
   @impl true
-  def init(_) do
+  def init(conversation_id) do
     # TODO:Several places know about the .agt directory. This should be centralized.
     # Possibly through Agt.Storage?
     File.mkdir_p!(".agt")
 
-    conversation_id = get_conversation_id()
     rules = read_agent_md()
 
     # TODO: Add a default system prompt when none is provided?
@@ -110,9 +109,5 @@ defmodule Agt.Session do
       {:error, _reason} ->
         nil
     end
-  end
-
-  defp get_conversation_id() do
-    DateTime.utc_now() |> DateTime.to_unix() |> to_string()
   end
 end
