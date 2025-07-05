@@ -12,8 +12,8 @@ defmodule Agt.Session do
 
   # Client API
 
-  def start_link({conversation_id, opts}) do
-    GenServer.start_link(__MODULE__, conversation_id, opts)
+  def start_link({args, opts}) do
+    GenServer.start_link(__MODULE__, args, opts)
   end
 
   def get_meta do
@@ -35,9 +35,7 @@ defmodule Agt.Session do
   # GenServer Callbacks
 
   @impl true
-  def init(conversation_id) do
-    rules = read_agent_md()
-
+  def init({conversation_id, rules}) do
     # TODO: Add a default system prompt when none is provided?
     reset_agent(rules || "", conversation_id)
 
@@ -95,15 +93,5 @@ defmodule Agt.Session do
   @impl true
   def terminate(_reason, _state) do
     nil
-  end
-
-  defp read_agent_md do
-    case File.read("AGENT.md") do
-      {:ok, content} ->
-        content
-
-      {:error, _reason} ->
-        nil
-    end
   end
 end

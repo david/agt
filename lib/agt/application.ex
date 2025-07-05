@@ -11,7 +11,7 @@ defmodule Agt.Application do
     children = [
       {Registry, keys: :unique, name: Agt.AgentRegistry},
       {Agt.AgentSupervisor, name: Agt.AgentSupervisor},
-      {Agt.Session, {generate_conversation_id(), name: Agt.Session}},
+      {Agt.Session, {{generate_conversation_id(), read_agent_md()}, name: Agt.Session}},
       {Agt.REPL, name: Agt.REPL}
     ]
 
@@ -22,5 +22,15 @@ defmodule Agt.Application do
 
   defp generate_conversation_id do
     DateTime.utc_now() |> DateTime.to_unix() |> to_string()
+  end
+
+  defp read_agent_md do
+    case File.read("AGENT.md") do
+      {:ok, content} ->
+        content
+
+      {:error, _reason} ->
+        nil
+    end
   end
 end
