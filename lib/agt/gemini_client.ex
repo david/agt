@@ -19,7 +19,6 @@ defmodule Agt.GeminiClient do
     body =
       %{
         contents: Enum.map(conversation, &make_turn/1),
-        generationConfig: %{temperature: 0.4},
         systemInstruction: %{parts: [%{text: system_prompt}]},
         tools: %{
           functionDeclarations: Tools.list() |> Enum.map(& &1.meta())
