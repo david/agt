@@ -70,10 +70,10 @@ defmodule Agt.Tools.FileWrite do
   end
 
   def call(%{}) do
-    %{error: "Error: missing required arguments `path` and `content`"}
+    %{error: "Please provide required arguments `path` and `content`"}
   end
 
   def call(_args) do
-    %{error: "Error: unexpected arguments. Expected `path` and `content`"}
+    %{error: "Unexpected arguments. Expected `path` and `content`"}
   end
 end

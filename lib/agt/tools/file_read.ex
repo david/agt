@@ -68,10 +68,10 @@ defmodule Agt.Tools.FileRead do
   end
 
   def call(%{}) do
-    %{status: "failure", error: "Error: missing required argument `path`"}
+    %{status: "failure", error: "Please provide required argument `path`"}
   end
 
   def call(_args) do
-    %{status: "failure", error: "Error: unexpected arguments. Expected `path`"}
+    %{status: "failure", error: "Unexpected arguments. Expected `path`"}
   end
 end

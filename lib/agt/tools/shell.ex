@@ -51,8 +51,7 @@ defmodule Agt.Tools.Shell do
 
   def call(_args) do
     %{
-      error: "Invalid arguments",
-      message: "The 'command' argument is required and must be a string."
+      error: "Please provide the required argument `command`."
     }
   end
 end
