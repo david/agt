@@ -8,8 +8,7 @@ defmodule Agt.REPL do
   alias Agt.Commands
   alias Agt.Config
   alias Agt.Message.ModelMessage
-  alias Agt.REPL.InputParser
-  alias Agt.REPL.Prompt
+  alias Agt.REPL.Editor
 
   def start_link({args, opts}) do
     GenServer.start_link(__MODULE__, args, opts)
@@ -35,48 +34,18 @@ defmodule Agt.REPL do
 
   @impl true
   def handle_info(:prompt, state) do
-    IO.puts("")
-    begin_prompt()
+    agent_meta = Agent.get_meta()
 
-    # Read the first line of input
-    first_line = IO.gets("")
-
-    case InputParser.parse_first_line(first_line) do
-      {:single_line, prompt} ->
-        end_prompt()
-        handle_input(prompt)
+    case Editor.read(agent_meta) do
+      :ignore ->
         send(self(), :prompt)
 
-      {:multi_line_start, initial_line_content} ->
-        # Start collecting multi-line input
-        case collect_multi_line([initial_line_content]) do
-          :ignore ->
-            send(self(), :prompt)
-
-          prompt ->
-            end_prompt()
-            handle_input(prompt)
-            send(self(), :prompt)
-        end
-
-      :ignore ->
+      prompt ->
+        handle_input(prompt)
         send(self(), :prompt)
     end
 
     {:noreply, state}
-  end
-
-  defp collect_multi_line(current_lines) do
-    # No prompt for continuation lines
-    line = IO.gets("")
-
-    case InputParser.parse_continuation_line(line, current_lines) do
-      {:continue, updated_lines} ->
-        collect_multi_line(updated_lines)
-
-      {:finished, final_prompt} ->
-        final_prompt
-    end
   end
 
   defp handle_input("/role " <> role_name) do
@@ -113,23 +82,4 @@ defmodule Agt.REPL do
 
   defp display_startup_message(%{rules: nil}), do: IO.puts("Rules not loaded")
   defp display_startup_message(%{rules: rules}), do: IO.puts("Rules loaded from #{rules}")
-
-  defp begin_prompt() do
-    {:ok, columns} = :io.columns()
-
-    %{total_tokens: total_tokens, max_tokens: max_tokens} = Agent.get_meta()
-
-    case Prompt.format(total_tokens, max_tokens, columns) do
-      {:ok, prompt_string} ->
-        IO.write(prompt_string)
-
-      {:error, :column_width_too_small} ->
-        # Fallback for very small terminals where ruler cannot be displayed
-        IO.write(Prompt.format_fallback())
-    end
-  end
-
-  defp end_prompt() do
-    IO.write(Prompt.format_end_prompt())
-  end
 end
