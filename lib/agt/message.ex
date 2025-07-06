@@ -16,6 +16,6 @@ defmodule Agt.Message do
 
   defmodule FunctionResponse do
     @derive {JSON.Encoder, only: [:name, :result, :role, :type]}
-    defstruct [:name, :result, role: "user", type: "function_response"]
+    defstruct [:name, :result, role: "user", type: "function_call_output"]
   end
 end

@@ -44,7 +44,7 @@ defmodule Agt.Conversations do
   defp structify(%{type: "response"} = map), do: struct(Agt.Message.ModelMessage, map)
   defp structify(%{type: "function_call"} = map), do: struct(Agt.Message.FunctionCall, map)
 
-  defp structify(%{type: "function_response"} = map),
+  defp structify(%{type: "function_call_output"} = map),
     do: struct(Agt.Message.FunctionResponse, map)
 
   defp write_message(iodata, conversation_id) do
