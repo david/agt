@@ -6,43 +6,24 @@ defmodule Agt.Tools.FileWrite do
   def meta do
     %{
       name: name(),
-      description: """
-        Writes a file to the project.
-
-        Expects a `path` and `content` argument to always be provided.
-
-        Example:
-        `file_write(path="path/to/my_file.txt", content="This is the content of the file.")`
-
-        **Warning:** A call to this function without either the `path` or the `content`
-        arguments will result in failure! NEVER do something like `file_write()` (with no arguments)!
-
-        On success, returns an object with the following properties:
-
-        - `path`: the path of the file that was written.
-        - `status`: the status of the write operation, set to `success`.
-
-        On failure, returns an object with the following properties:
-
-        - `path`: the path of the file that was meant to be written, if it is provided as an argument.
-        - `status`: the status of the write operation, set to `failure`.
-        - `error`: a string describing the error.
-      """,
+      description: "Write a file to a given path.",
       parameters: %{
         type: "object",
         properties: %{
           path: %{
             type: "string",
             description: """
-            The path of the file to write.
+            The path, relative to the current directory, to write the contents to
+            (e.g., lib/agt/my_module.ex).
 
-            - Must be a path relative to the project root.
-            - Must not resolve to a path outside the project root.
+            Parent directories will be created if they don't exist.
             """
           },
           content: %{
             type: "string",
-            description: "The content to write to the file."
+            description: """
+            The file contents (e.g. "defmodule MyModule do\nend").
+            """
           }
         },
         required: ["path", "content"]
@@ -61,16 +42,16 @@ defmodule Agt.Tools.FileWrite do
 
       case File.write(expanded_path, content) do
         {:error, reason} ->
-          %{path: path, status: "failure", error: "Failed to write file: #{reason}"}
+          %{error: "Failed to write file: #{reason}"}
 
         :ok ->
-          %{path: path, status: "success"}
+          %{output: "File #{path} written successfully."}
       end
     end
   end
 
   def call(%{}) do
-    %{error: "Please provide required arguments `path` and `content`"}
+    %{error: "Please provide the content to write and the path of the file to write to."}
   end
 
   def call(_args) do
