@@ -28,8 +28,8 @@ defmodule Agt.Agent do
     GenServer.call(__MODULE__, :retry, 300_000)
   end
 
-  def send_messages(messages) when is_list(messages) do
-    GenServer.call(__MODULE__, {:send_messages, messages}, 300_000)
+  def send_messages(messages, origin) do
+    GenServer.cast(__MODULE__, {:send_messages, messages, origin})
   end
 
   def get_meta() do
@@ -51,7 +51,91 @@ defmodule Agt.Agent do
   end
 
   @impl true
-  def handle_call({:send_messages, user_messages}, _from, state) do
+  def handle_cast({:send_messages, user_messages, origin}, state) do
+    send_messages_local(user_messages, origin, state)
+  end
+
+  @impl true
+  def handle_call(:retry, _from, %{messages: messages, system_prompt: system_prompt} = state) do
+    messages
+    |> Enum.reverse()
+    |> GeminiClient.generate_content(system_prompt)
+    # TODO: This needs a origin to work correctly in the new async model.
+    # For now, it will likely fail or not behave as expected.
+    |> handle_response(state, self())
+  end
+
+  @impl true
+  def handle_call(:get_meta, _from, %{total_tokens: count, model_name: model} = state) do
+    {:reply,
+     model
+     |> ModelSpecification.get_spec()
+     |> Map.merge(%{total_tokens: count, model_name: model}), state}
+  end
+
+  defp handle_response({:ok, messages, meta}, state, origin) do
+    %{conversation_id: conversation_id, messages: old_messages, total_tokens: current_tokens} =
+      state
+
+    messages
+    |> Enum.map(&normalize/1)
+    |> Enum.each(&({:ok, _msg} = Conversations.create_message(&1, conversation_id)))
+
+    messages
+    |> Enum.filter(&match?(%ModelMessage{}, &1))
+    |> Enum.each(&send(origin, {:agent_update, &1}))
+
+    function_calls = Enum.filter(messages, &match?(%FunctionCall{}, &1))
+
+    Enum.each(function_calls, &send(origin, {:agent_update, &1}))
+
+    function_responses =
+      function_calls
+      |> Enum.map(fn %FunctionCall{name: name, arguments: args} ->
+        %FunctionResponse{name: name, result: Tools.call(name, args)}
+      end)
+
+    Enum.each(function_responses, &send(origin, {:agent_update, &1}))
+
+    %{total_tokens: response_total_tokens} = meta
+
+    new_state = %{
+      state
+      | messages: concat_messages(messages, old_messages),
+        total_tokens: current_tokens + response_total_tokens
+    }
+
+    if Enum.any?(function_responses) do
+      send_messages_local(function_responses, origin, new_state)
+    else
+      send(origin, :agent_done)
+
+      {:noreply, new_state}
+    end
+  end
+
+  defp handle_response({:error, error}, state, origin) do
+    # Asynchronously notify the REPL of the error.
+    send(origin, {:agent_error, error})
+
+    cond do
+      String.match?(error, ~r/reason: :timeout/) ->
+        Logger.error("Timeout")
+        {:noreply, state}
+
+      true ->
+        Logger.error("Error: #{error}")
+        {:noreply, state}
+    end
+  end
+
+  defp normalize(%ModelMessage{body: body}), do: %ModelMessage{body: String.trim(body)}
+  defp normalize(function_call), do: function_call
+
+  defp concat_messages(new_messages, old_messages),
+    do: new_messages |> Enum.reverse() |> Kernel.++(old_messages)
+
+  defp send_messages_local(user_messages, origin, state) do
     %{conversation_id: conversation_id, messages: old_messages, system_prompt: system_prompt} =
       state
 
@@ -63,82 +147,6 @@ defmodule Agt.Agent do
     messages
     |> Enum.reverse()
     |> GeminiClient.generate_content(system_prompt)
-    |> handle_response(%{state | messages: messages})
+    |> handle_response(%{state | messages: messages}, origin)
   end
-
-  @impl true
-  def handle_call(:retry, _from, %{messages: messages, system_prompt: system_prompt} = state) do
-    messages
-    |> Enum.reverse()
-    |> GeminiClient.generate_content(system_prompt)
-    |> handle_response(state)
-  end
-
-  @impl true
-  def handle_call(:get_meta, _from, %{total_tokens: count, model_name: model} = state) do
-    {:reply,
-     model
-     |> ModelSpecification.get_spec()
-     |> Map.merge(%{total_tokens: count, model_name: model}), state}
-  end
-
-  defp handle_response(
-         {:ok, model_messages, %{total_tokens: response_total_tokens}},
-         state
-       ) do
-    %{conversation_id: conversation_id, messages: old_messages, total_tokens: current_tokens} =
-      state
-
-    for part <- model_messages,
-        do: {:ok, _message} = Conversations.create_message(part, conversation_id)
-
-    messages = concat_messages(model_messages, old_messages)
-    total_tokens = current_tokens + response_total_tokens
-    new_state = %{state | messages: messages, total_tokens: total_tokens}
-
-    function_calls = Enum.filter(model_messages, &match?(%FunctionCall{}, &1))
-
-    if Enum.any?(function_calls) do
-      handle_function_calls(function_calls, new_state)
-    else
-      model_parts = Enum.filter(model_messages, &match?(%ModelMessage{}, &1))
-      {:reply, {:ok, model_parts}, new_state}
-    end
-  end
-
-  defp handle_response({:error, error}, state) do
-    cond do
-      String.match?(error, ~r/reason: :timeout/) ->
-        Logger.error("Timeout")
-
-        {:reply, {:error, :timeout}, state}
-
-      true ->
-        Logger.error("Error: #{error}")
-
-        {:reply, {:error, error}, state}
-    end
-  end
-
-  defp handle_function_calls(function_calls, state) do
-    %{conversation_id: conversation_id, messages: old_messages, system_prompt: system_prompt} =
-      state
-
-    results =
-      for %{name: name, arguments: args} <- function_calls do
-        %FunctionResponse{name: name, result: Tools.call(name, args)}
-      end
-
-    for part <- results, do: {:ok, _} = Conversations.create_message(part, conversation_id)
-
-    messages = concat_messages(results, old_messages)
-
-    messages
-    |> Enum.reverse()
-    |> GeminiClient.generate_content(system_prompt)
-    |> handle_response(%{state | messages: messages})
-  end
-
-  defp concat_messages(new_messages, old_messages),
-    do: new_messages |> Enum.reverse() |> Kernel.++(old_messages)
 end

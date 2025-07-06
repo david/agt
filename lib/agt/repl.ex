@@ -7,6 +7,8 @@ defmodule Agt.REPL do
   alias Agt.Agent
   alias Agt.Commands
   alias Agt.Config
+  alias Agt.Message.FunctionCall
+  alias Agt.Message.FunctionResponse
   alias Agt.Message.ModelMessage
   alias Agt.REPL.Editor
 
@@ -41,14 +43,54 @@ defmodule Agt.REPL do
         send(self(), :prompt)
 
       prompt ->
-        handle_input(prompt)
-        send(self(), :prompt)
+        handle_input(prompt, self())
     end
 
     {:noreply, state}
   end
 
-  defp handle_input("/role " <> role_name) do
+  @impl true
+  def handle_info({:agent_update, %ModelMessage{body: body}}, state) do
+    IO.puts("")
+    IO.puts(body)
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:agent_update, %FunctionCall{name: name, arguments: args}}, state) do
+    IO.puts("Tool Call: #{name}(#{inspect(args)})")
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:agent_update, %FunctionResponse{name: name, result: result}}, state) do
+    IO.puts("Tool Result: #{name} -> #{inspect(result)}")
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(:agent_done, state) do
+    send(self(), :prompt)
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:agent_error, :timeout}, state) do
+    IO.puts("Request timed out.")
+    send(self(), :prompt)
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:agent_error, reason}, state) do
+    IO.puts("An error occurred: #{inspect(reason)}")
+    send(self(), :prompt)
+    {:noreply, state}
+  end
+
+  defp handle_input("/role " <> role_name, _repl_pid) do
     role_name = String.trim(role_name)
 
     case Agt.Commands.load_role(role_name) do
@@ -60,24 +102,8 @@ defmodule Agt.REPL do
     end
   end
 
-  defp handle_input(input) do
-    case Commands.send_messages(input) do
-      {:ok, response} ->
-        handle_text_parts(response)
-
-      {:error, :timeout} ->
-        IO.puts("Request timed out.")
-
-      {:error, reason} ->
-        IO.puts("An error occurred: #{inspect(reason)}")
-    end
-  end
-
-  defp handle_text_parts(parts) do
-    for %{body: body} = part <- parts, match?(%ModelMessage{}, part), String.trim(body) != "" do
-      IO.puts("")
-      IO.puts(body)
-    end
+  defp handle_input(input, repl_pid) do
+    Commands.send_messages(input, repl_pid)
   end
 
   defp display_startup_message(%{rules: nil}), do: IO.puts("Rules not loaded")

@@ -7,28 +7,17 @@ defmodule Agt.Commands do
   alias Agt.Message.UserMessage
 
   @doc """
-  Sends a prompt to the session.
+  Sends a prompt to the session asynchronously.
 
   ## Parameters
 
     - `input`: The raw user input string.
-
-  ## Returns
-
-    - `{:ok, response}`: The response from the session.
-    - `{:error, :timeout}`: If the session times out.
+    - `repl_pid`: The PID of the REPL process to send updates to.
   """
-  @spec send_messages(String.t()) :: {:ok, list()} | {:error, :timeout}
-  def send_messages(input) do
+  @spec send_messages(String.t(), pid()) :: :ok
+  def send_messages(input, repl_pid) do
     [%UserMessage{body: input}]
-    |> Agent.send_messages()
-    |> case do
-      {:ok, model_messages} ->
-        {:ok, model_messages}
-
-      {:error, :timeout} = error ->
-        error
-    end
+    |> Agent.send_messages(repl_pid)
   end
 
   def load_role(_name) do
