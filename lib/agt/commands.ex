@@ -3,8 +3,8 @@ defmodule Agt.Commands do
   This module is responsible for handling user-facing commands.
   """
 
+  alias Agt.Agent
   alias Agt.Message.UserMessage
-  alias Agt.Session
 
   @doc """
   Sends a prompt to the session.
@@ -21,13 +21,21 @@ defmodule Agt.Commands do
   @spec send_messages(String.t()) :: {:ok, list()} | {:error, :timeout}
   def send_messages(input) do
     [%UserMessage{body: input}]
-    |> Session.send_messages()
+    |> Agent.send_messages()
+    |> case do
+      {:ok, model_messages} ->
+        {:ok, model_messages}
+
+      {:error, :timeout} = error ->
+        error
+    end
   end
 
-  def load_role(name) do
-    {:ok, prompt} = load_prompt("prompts/#{name}.md")
-
-    Session.reset(prompt)
+  def load_role(_name) do
+    # {:ok, prompt} = load_prompt("prompts/#{name}.md")
+    #
+    # Session.reset(prompt)
+    {:ok, nil}
   end
 
   @doc """

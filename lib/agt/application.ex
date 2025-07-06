@@ -3,6 +3,8 @@ defmodule Agt.Application do
 
   use Application
 
+  alias Agt.Message.UserMessage
+
   @rules_path "AGENT.md"
 
   def start(_type, _args) do
@@ -13,13 +15,11 @@ defmodule Agt.Application do
     rules = read_agent_md()
 
     children = [
-      {Registry, keys: :unique, name: Agt.AgentRegistry},
-      {Agt.AgentSupervisor, name: Agt.AgentSupervisor},
-      {Agt.Session, {{generate_conversation_id(), rules}, name: Agt.Session}},
+      {Agt.Agent, {generate_conversation_id(), %UserMessage{body: rules}}},
       {Agt.REPL, {%{rules: rules && @rules_path}, name: Agt.REPL}}
     ]
 
-    opts = [strategy: :one_for_one, name: Agt.Supervisor]
+    opts = [strategy: :one_for_one, name: Agt.ApplicationSupervisor]
 
     Supervisor.start_link(children, opts)
   end

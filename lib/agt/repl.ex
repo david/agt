@@ -4,12 +4,12 @@ defmodule Agt.REPL do
   """
   use GenServer
 
+  alias Agt.Agent
   alias Agt.Commands
   alias Agt.Config
   alias Agt.Message.{FunctionCall, FunctionResponse, ModelMessage}
   alias Agt.REPL.InputParser
   alias Agt.REPL.Prompt
-  alias Agt.Session
   alias Agt.Tools
 
   def start_link({args, opts}) do
@@ -125,7 +125,7 @@ defmodule Agt.REPL do
 
     if Enum.any?(results) do
       results
-      |> Session.send_messages()
+      |> Agent.send_messages()
       |> handle_response()
     end
   end
@@ -136,7 +136,7 @@ defmodule Agt.REPL do
   defp begin_prompt() do
     {:ok, columns} = :io.columns()
 
-    %{total_tokens: total_tokens, max_tokens: max_tokens} = Session.get_meta()
+    %{total_tokens: total_tokens, max_tokens: max_tokens} = Agent.get_meta()
 
     case Prompt.format(total_tokens, max_tokens, columns) do
       {:ok, prompt_string} ->

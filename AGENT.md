@@ -58,14 +58,12 @@ AGT (AI Agent Tool) is an Elixir-based AI agent framework that provides a REPL i
 agt/
 ├── lib/agt/                 # Core application modules
 │   ├── agent.ex             # Main Agent GenServer
-│   ├── agent_supervisor.ex  # Agent supervision
 │   ├── application.ex       # OTP Application
 │   ├── config.ex            # Configuration management
 │   ├── conversations.ex     # Conversation persistence
 │   ├── gemini_client.ex     # Google Gemini API client
 │   ├── message.ex           # Message structs
 │   ├── repl.ex              # Interactive REPL
-│   ├── session.ex           # Session management
 │   └── tools/               # Tool modules
 │       ├── file_delete.ex
 │       ├── file_list.ex

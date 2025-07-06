@@ -12,22 +12,24 @@ defmodule Agt.Agent do
 
   require Logger
 
-  def start_link({conversation_id, _system_prompt} = args) do
-    GenServer.start_link(__MODULE__, args,
-      name: {:via, Registry, {Agt.AgentRegistry, conversation_id}}
-    )
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
-  def retry(pid) do
-    GenServer.call(pid, :retry, 300_000)
+  def restart() do
+    Supervisor.restart_child(Agt.ApplicationSupervisor, __MODULE__)
   end
 
-  def send_messages(messages, pid) when is_list(messages) do
-    GenServer.call(pid, {:send_messages, messages}, 300_000)
+  def retry() do
+    GenServer.call(__MODULE__, :retry, 300_000)
   end
 
-  def get_meta(pid) do
-    GenServer.call(pid, :get_meta)
+  def send_messages(messages) when is_list(messages) do
+    GenServer.call(__MODULE__, {:send_messages, messages}, 300_000)
+  end
+
+  def get_meta() do
+    GenServer.call(__MODULE__, :get_meta)
   end
 
   @impl true
