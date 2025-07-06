@@ -5,11 +5,11 @@ defmodule Agt.REPL do
   use GenServer
 
   alias Agt.Agent
-  alias Agt.Commands
   alias Agt.Config
   alias Agt.Message.FunctionCall
   alias Agt.Message.FunctionResponse
   alias Agt.Message.ModelMessage
+  alias Agt.Message.UserMessage
   alias Agt.REPL.Editor
 
   def start_link({args, opts}) do
@@ -93,19 +93,47 @@ defmodule Agt.REPL do
   defp handle_input("/role " <> role_name, _repl_pid) do
     role_name = String.trim(role_name)
 
-    case Agt.Commands.load_role(role_name) do
-      {:ok, _} ->
-        IO.puts("Successfully loaded role: #{role_name}")
+    {:ok, _} = load_role(role_name)
 
-      {:error, {:not_found, role_name}} ->
-        IO.puts("Error: Role not found: #{role_name}")
-    end
+    # case load_role(role_name) do
+    #   {:ok, _} ->
+    #     IO.puts("Successfully loaded role: #{role_name}")
+    #
+    #   {:error, {:not_found, role_name}} ->
+    #     IO.puts("Error: Role not found: #{role_name}")
+    # end
   end
 
   defp handle_input(input, repl_pid) do
-    Commands.send_messages(input, repl_pid)
+    send_messages(input, repl_pid)
   end
 
   defp display_startup_message(%{rules: nil}), do: IO.puts("Rules not loaded")
   defp display_startup_message(%{rules: rules}), do: IO.puts("Rules loaded from #{rules}")
+
+  defp send_messages(input, repl_pid) do
+    [%UserMessage{body: input}]
+    |> Agent.send_messages(repl_pid)
+  end
+
+  defp load_role(name) do
+    {:ok, _prompt} = load_prompt("prompts/#{name}.md")
+
+    # Agent.reset(prompt)
+
+    {:ok, nil}
+  end
+
+  defp load_prompt(path) do
+    case File.read(path) do
+      {:error, :enoent} ->
+        {:error, {:not_found, path}}
+
+      {:error, reason} ->
+        {:error, reason}
+
+      response ->
+        response
+    end
+  end
 end
