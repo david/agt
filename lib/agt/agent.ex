@@ -9,6 +9,10 @@ defmodule Agt.Agent do
   alias Agt.Conversations
   alias Agt.GeminiClient
   alias Agt.ModelSpecification
+  alias Agt.Message.FunctionCall
+  alias Agt.Message.FunctionResponse
+  alias Agt.Message.ModelMessage
+  alias Agt.Tools
 
   require Logger
 
@@ -78,7 +82,10 @@ defmodule Agt.Agent do
      |> Map.merge(%{total_tokens: count, model_name: model}), state}
   end
 
-  defp handle_response({:ok, model_messages, %{total_tokens: response_total_tokens}}, state) do
+  defp handle_response(
+         {:ok, model_messages, %{total_tokens: response_total_tokens}},
+         state
+       ) do
     %{conversation_id: conversation_id, messages: old_messages, total_tokens: current_tokens} =
       state
 
@@ -87,8 +94,16 @@ defmodule Agt.Agent do
 
     messages = concat_messages(model_messages, old_messages)
     total_tokens = current_tokens + response_total_tokens
+    new_state = %{state | messages: messages, total_tokens: total_tokens}
 
-    {:reply, {:ok, model_messages}, %{state | messages: messages, total_tokens: total_tokens}}
+    function_calls = Enum.filter(model_messages, &match?(%FunctionCall{}, &1))
+
+    if Enum.any?(function_calls) do
+      handle_function_calls(function_calls, new_state)
+    else
+      model_parts = Enum.filter(model_messages, &match?(%ModelMessage{}, &1))
+      {:reply, {:ok, model_parts}, new_state}
+    end
   end
 
   defp handle_response({:error, error}, state) do
@@ -103,6 +118,25 @@ defmodule Agt.Agent do
 
         {:reply, {:error, error}, state}
     end
+  end
+
+  defp handle_function_calls(function_calls, state) do
+    %{conversation_id: conversation_id, messages: old_messages, system_prompt: system_prompt} =
+      state
+
+    results =
+      for %{name: name, arguments: args} <- function_calls do
+        %FunctionResponse{name: name, result: Tools.call(name, args)}
+      end
+
+    for part <- results, do: {:ok, _} = Conversations.create_message(part, conversation_id)
+
+    messages = concat_messages(results, old_messages)
+
+    messages
+    |> Enum.reverse()
+    |> GeminiClient.generate_content(system_prompt)
+    |> handle_response(%{state | messages: messages})
   end
 
   defp concat_messages(new_messages, old_messages),

@@ -7,10 +7,9 @@ defmodule Agt.REPL do
   alias Agt.Agent
   alias Agt.Commands
   alias Agt.Config
-  alias Agt.Message.{FunctionCall, FunctionResponse, ModelMessage}
+  alias Agt.Message.ModelMessage
   alias Agt.REPL.InputParser
   alias Agt.REPL.Prompt
-  alias Agt.Tools
 
   def start_link({args, opts}) do
     GenServer.start_link(__MODULE__, args, opts)
@@ -93,40 +92,22 @@ defmodule Agt.REPL do
   end
 
   defp handle_input(input) do
-    Commands.send_messages(input)
-    |> handle_response()
-  end
+    case Commands.send_messages(input) do
+      {:ok, response} ->
+        handle_text_parts(response)
 
-  defp handle_response(nil), do: nil
+      {:error, :timeout} ->
+        IO.puts("Request timed out.")
 
-  defp handle_response({:ok, response}) when is_list(response) do
-    handle_text_parts(response)
-    handle_function_calls(response)
-  end
-
-  defp handle_response({:error, :timeout}) do
-    :ok
+      {:error, reason} ->
+        IO.puts("An error occurred: #{inspect(reason)}")
+    end
   end
 
   defp handle_text_parts(parts) do
     for %{body: body} = part <- parts, match?(%ModelMessage{}, part), String.trim(body) != "" do
       IO.puts("")
       IO.puts(body)
-    end
-  end
-
-  defp handle_function_calls(parts) do
-    results =
-      for(
-        %{name: name, arguments: args} = part <- parts,
-        match?(%FunctionCall{}, part),
-        do: %FunctionResponse{name: name, result: Tools.call(name, args)}
-      )
-
-    if Enum.any?(results) do
-      results
-      |> Agent.send_messages()
-      |> handle_response()
     end
   end
 
