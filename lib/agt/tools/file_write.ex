@@ -47,7 +47,12 @@ defmodule Agt.Tools.FileWrite do
           %{error: "Failed to write file: #{reason}"}
 
         :ok ->
-          %{output: "File #{path} written successfully."}
+          %{
+            output: """
+            The `file_write` tool wrote to #{path} successfully. Good job! You don't need to repeat
+            this operation unless you want to make more changes to the file.
+            """
+          }
       end
     end
   end
