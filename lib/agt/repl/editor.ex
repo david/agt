@@ -10,7 +10,8 @@ defmodule Agt.REPL.Editor do
   Displays a prompt, reads user input (single or multi-line), and returns it.
   """
   def read(agent_meta) do
-    IO.puts("")
+    (IO.ANSI.clear_line() <> "\r") |> IO.write()
+
     begin_prompt(agent_meta)
 
     # Read the first line of input

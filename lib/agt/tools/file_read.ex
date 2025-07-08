@@ -5,6 +5,8 @@ defmodule Agt.Tools.FileRead do
 
   def name, do: "file_read"
 
+  def visible_properties, do: [:path]
+
   def meta do
     %{
       name: name(),

@@ -5,6 +5,8 @@ defmodule Agt.Tools.Shell do
 
   def name, do: "shell"
 
+  def visible_properties, do: [:command]
+
   def meta do
     %{
       name: name(),

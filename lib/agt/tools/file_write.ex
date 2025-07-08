@@ -3,6 +3,8 @@ defmodule Agt.Tools.FileWrite do
 
   def name, do: "file_write"
 
+  def visible_properties, do: [:path]
+
   def meta do
     %{
       name: name(),

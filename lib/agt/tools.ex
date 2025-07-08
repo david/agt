@@ -24,5 +24,11 @@ defmodule Agt.Tools do
     ]
   end
 
-  def call(tool, args), do: list() |> Enum.find(&(&1.name() == tool)) |> then(& &1.call(args))
+  def call(tool_name, args), do: get_tool(tool_name).call(args)
+
+  def get_visible_properties(tool_name), do: get_tool(tool_name).visible_properties()
+
+  defp get_tool(tool_name) do
+    Enum.find(list(), &(&1.name() == tool_name))
+  end
 end

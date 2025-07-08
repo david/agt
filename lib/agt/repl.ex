@@ -11,6 +11,7 @@ defmodule Agt.REPL do
   alias Agt.Message.ModelMessage
   alias Agt.Message.UserMessage
   alias Agt.REPL.Editor
+  alias Agt.Tools
 
   def start_link({args, opts}) do
     GenServer.start_link(__MODULE__, args, opts)
@@ -51,21 +52,44 @@ defmodule Agt.REPL do
 
   @impl true
   def handle_info({:agent_update, %ModelMessage{body: body}}, state) do
-    IO.puts("")
-    IO.puts(body)
+    (IO.ANSI.clear_line() <> "\r" <> body) |> IO.puts()
 
     {:noreply, state}
   end
 
   @impl true
-  def handle_info({:agent_update, %FunctionCall{name: name, arguments: args}}, state) do
-    IO.puts("Tool Call: #{name}(#{inspect(args)})")
+  def handle_info({:agent_update, :function_calls_begin}, state) do
+    (IO.ANSI.clear_line() <> "\r") |> IO.write()
+
     {:noreply, state}
   end
 
   @impl true
-  def handle_info({:agent_update, %FunctionResponse{name: name, result: result}}, state) do
-    IO.puts("Tool Result: #{name} -> #{inspect(result)}")
+  def handle_info({:agent_update, :function_calls_end}, state) do
+    IO.write("\n...")
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:agent_update, %FunctionCall{} = function_call}, state) do
+    ("* " <> tool_name(function_call) <> "(" <> tool_arguments(function_call) <> ")")
+    |> IO.write()
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:agent_update, %FunctionResponse{result: %{output: _}}}, state) do
+    ("\r" <> IO.ANSI.light_green() <> "" <> IO.ANSI.white() <> "\n") |> IO.write()
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:agent_update, %FunctionResponse{result: %{error: _}}}, state) do
+    ("\r" <> IO.ANSI.light_red() <> "" <> IO.ANSI.white() <> "\n") |> IO.write()
+
     {:noreply, state}
   end
 
@@ -90,6 +114,21 @@ defmodule Agt.REPL do
     {:noreply, state}
   end
 
+  defp tool_name(%FunctionCall{name: name}), do: IO.ANSI.magenta() <> name <> IO.ANSI.white()
+
+  defp tool_arguments(%FunctionCall{name: name, arguments: args}) do
+    args
+    |> Enum.filter(fn {key, _value} -> key in Tools.get_visible_properties(name) end)
+    |> Enum.map(&tool_key_value(&1))
+    |> Enum.join(" ")
+  end
+
+  defp tool_key_value({key, value}) do
+    IO.ANSI.cyan() <>
+      to_string(key) <>
+      IO.ANSI.white() <> "=" <> IO.ANSI.light_white() <> inspect(value) <> IO.ANSI.white()
+  end
+
   defp handle_input("/role " <> role_name, _repl_pid) do
     role_name = String.trim(role_name)
 
@@ -105,6 +144,8 @@ defmodule Agt.REPL do
   end
 
   defp handle_input(input, repl_pid) do
+    IO.write("\n...")
+
     send_messages(input, repl_pid)
   end
 

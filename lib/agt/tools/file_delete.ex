@@ -3,6 +3,8 @@ defmodule Agt.Tools.FileDelete do
 
   def name, do: "file_delete"
 
+  def visible_properties, do: [:path]
+
   def meta do
     %{
       name: name(),

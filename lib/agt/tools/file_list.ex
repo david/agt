@@ -3,6 +3,8 @@ defmodule Agt.Tools.FileList do
 
   def name, do: "file_list"
 
+  def visible_properties, do: []
+
   def meta do
     %{
       name: name(),

@@ -52,7 +52,18 @@ defmodule Agt.Agent do
 
   @impl true
   def handle_cast({:send_messages, user_messages, origin}, state) do
-    send_messages_local(user_messages, origin, state)
+    %{conversation_id: conversation_id, messages: old_messages, system_prompt: system_prompt} =
+      state
+
+    for part <- user_messages,
+        do: {:ok, _message} = Conversations.create_message(part, conversation_id)
+
+    messages = concat_messages(user_messages, old_messages)
+
+    messages
+    |> Enum.reverse()
+    |> GeminiClient.generate_content(system_prompt)
+    |> handle_response(%{state | messages: messages}, origin)
   end
 
   @impl true
@@ -85,17 +96,28 @@ defmodule Agt.Agent do
     |> Enum.filter(&match?(%ModelMessage{}, &1))
     |> Enum.each(&send(origin, {:agent_update, &1}))
 
-    function_calls = Enum.filter(messages, &match?(%FunctionCall{}, &1))
-
-    Enum.each(function_calls, &send(origin, {:agent_update, &1}))
+    send(origin, {:agent_update, :function_calls_begin})
 
     function_responses =
-      function_calls
-      |> Enum.map(fn %FunctionCall{name: name, arguments: args} ->
-        %FunctionResponse{name: name, result: Tools.call(name, args)}
+      messages
+      |> Enum.filter(&match?(%FunctionCall{}, &1))
+      |> Enum.map(fn %FunctionCall{name: name, arguments: args} = function_call ->
+        send(origin, {:agent_update, function_call})
+
+        function_response = %FunctionResponse{name: name, result: Tools.call(name, args)}
+
+        send(origin, {:agent_update, function_response})
+
+        function_response
       end)
 
-    Enum.each(function_responses, &send(origin, {:agent_update, &1}))
+    send(origin, {:agent_update, :function_calls_end})
+
+    if Enum.any?(function_responses) do
+      send_messages(function_responses, origin)
+    else
+      send(origin, :agent_done)
+    end
 
     %{total_tokens: response_total_tokens} = meta
 
@@ -105,13 +127,7 @@ defmodule Agt.Agent do
         total_tokens: current_tokens + response_total_tokens
     }
 
-    if Enum.any?(function_responses) do
-      send_messages_local(function_responses, origin, new_state)
-    else
-      send(origin, :agent_done)
-
-      {:noreply, new_state}
-    end
+    {:noreply, new_state}
   end
 
   defp handle_response({:error, error}, state, origin) do
@@ -134,19 +150,4 @@ defmodule Agt.Agent do
 
   defp concat_messages(new_messages, old_messages),
     do: new_messages |> Enum.reverse() |> Kernel.++(old_messages)
-
-  defp send_messages_local(user_messages, origin, state) do
-    %{conversation_id: conversation_id, messages: old_messages, system_prompt: system_prompt} =
-      state
-
-    for part <- user_messages,
-        do: {:ok, _message} = Conversations.create_message(part, conversation_id)
-
-    messages = concat_messages(user_messages, old_messages)
-
-    messages
-    |> Enum.reverse()
-    |> GeminiClient.generate_content(system_prompt)
-    |> handle_response(%{state | messages: messages}, origin)
-  end
 end

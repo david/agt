@@ -76,9 +76,9 @@ defmodule Agt.REPL.Prompt do
   end
 
   @doc """
-  Formats the end-of-prompt marker, including ANSI reset and the '...' indicator.
+  Formats the end-of-prompt marker.
   """
   def format_end_prompt() do
-    IO.ANSI.reset() <> Agt.ANSI.command_end() <> "\n" <> "..."
+    IO.ANSI.reset() <> Agt.ANSI.command_end()
   end
 end
