@@ -23,7 +23,8 @@ defmodule Agt.MixProject do
   defp deps do
     [
       {:req, "~> 0.4.0"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:earmark_parser, "~> 1.4"}
     ]
   end
 end

@@ -6,6 +6,7 @@ defmodule Agt.REPL do
 
   alias Agt.Agent
   alias Agt.Config
+  alias Agt.REPL.MarkdownRenderer
   alias Agt.Message.FunctionCall
   alias Agt.Message.FunctionResponse
   alias Agt.Message.ModelMessage
@@ -52,7 +53,7 @@ defmodule Agt.REPL do
 
   @impl true
   def handle_info({:agent_update, %ModelMessage{body: body}}, state) do
-    (IO.ANSI.clear_line() <> "\r" <> body) |> IO.puts()
+    (IO.ANSI.clear_line() <> "\r" <> MarkdownRenderer.render(body)) |> IO.puts()
 
     {:noreply, state}
   end
