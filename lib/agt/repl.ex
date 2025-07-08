@@ -6,13 +6,13 @@ defmodule Agt.REPL do
 
   alias Agt.Agent
   alias Agt.Config
-  alias Agt.REPL.MarkdownRenderer
   alias Agt.Message.FunctionCall
   alias Agt.Message.FunctionResponse
   alias Agt.Message.ModelMessage
   alias Agt.Message.UserMessage
   alias Agt.REPL.Editor
-  alias Agt.Tools
+  alias Agt.REPL.MarkdownRenderer
+  alias Agt.REPL.Tools
 
   def start_link({args, opts}) do
     GenServer.start_link(__MODULE__, args, opts)
@@ -74,7 +74,7 @@ defmodule Agt.REPL do
 
   @impl true
   def handle_info({:agent_update, %FunctionCall{} = function_call}, state) do
-    ("* " <> tool_name(function_call) <> "(" <> tool_arguments(function_call) <> ")")
+    ("* " <> Tools.format_function_call(function_call))
     |> IO.write()
 
     {:noreply, state}
@@ -113,21 +113,6 @@ defmodule Agt.REPL do
     IO.puts("An error occurred: #{inspect(reason)}")
     send(self(), :prompt)
     {:noreply, state}
-  end
-
-  defp tool_name(%FunctionCall{name: name}), do: IO.ANSI.magenta() <> name <> IO.ANSI.white()
-
-  defp tool_arguments(%FunctionCall{name: name, arguments: args}) do
-    args
-    |> Enum.filter(fn {key, _value} -> key in Tools.get_visible_properties(name) end)
-    |> Enum.map(&tool_key_value(&1))
-    |> Enum.join(" ")
-  end
-
-  defp tool_key_value({key, value}) do
-    IO.ANSI.cyan() <>
-      to_string(key) <>
-      IO.ANSI.white() <> "=" <> IO.ANSI.light_white() <> inspect(value) <> IO.ANSI.white()
   end
 
   defp handle_input("/role " <> role_name, _repl_pid) do
