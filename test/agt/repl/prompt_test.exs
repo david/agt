@@ -115,7 +115,7 @@ defmodule Agt.REPL.PromptTest do
     end
 
     test "handles large token counts in the full prompt string" do
-      total_tokens = 99999
+      total_tokens = 99_999
       max_tokens = 100_000
       columns = 80
 

@@ -1,4 +1,8 @@
 defmodule Agt.Tools.FileWrite do
+  @moduledoc """
+  A tool for writing files to the filesystem.
+  """
+
   require Logger
 
   def name, do: "file_write"

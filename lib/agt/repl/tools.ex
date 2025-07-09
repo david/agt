@@ -18,8 +18,7 @@ defmodule Agt.REPL.Tools do
   defp tool_arguments(%FunctionCall{name: name, arguments: args}) do
     args
     |> Enum.filter(fn {key, _value} -> key in Tools.get_visible_properties(name) end)
-    |> Enum.map(&tool_key_value(&1))
-    |> Enum.join(" ")
+    |> Enum.map_join(" ", &tool_key_value/1)
   end
 
   defp tool_key_value({key, value}) do

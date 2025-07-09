@@ -1,4 +1,8 @@
 defmodule Agt.Tools.FileList do
+  @moduledoc """
+  A tool for listing files in the project.
+  """
+
   require Logger
 
   def name, do: "file_list"

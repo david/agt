@@ -1,4 +1,8 @@
 defmodule Agt.Tools.FileRead do
+  @moduledoc """
+  A tool for reading files from the filesystem.
+  """
+
   alias Agt.Tools.FileList
 
   require Logger

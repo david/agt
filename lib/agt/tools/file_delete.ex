@@ -1,4 +1,8 @@
 defmodule Agt.Tools.FileDelete do
+  @moduledoc """
+  A tool for deleting files from the filesystem.
+  """
+
   require Logger
 
   def name, do: "file_delete"

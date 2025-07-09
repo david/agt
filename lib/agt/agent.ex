@@ -134,14 +134,12 @@ defmodule Agt.Agent do
     # Asynchronously notify the REPL of the error.
     send(origin, {:agent_error, error})
 
-    cond do
-      String.match?(error, ~r/reason: :timeout/) ->
-        Logger.error("Timeout")
-        {:noreply, state}
-
-      true ->
-        Logger.error("Error: #{error}")
-        {:noreply, state}
+    if String.match?(error, ~r/reason: :timeout/) do
+      Logger.error("Timeout")
+      {:noreply, state}
+    else
+      Logger.error("Error: #{error}")
+      {:noreply, state}
     end
   end
 
