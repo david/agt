@@ -12,27 +12,39 @@ defmodule Agt.Tools.FileWrite do
   def meta do
     %{
       name: name(),
-      description: "Write a file to a given path.",
+      description: """
+      Write the text contents to a given file path.
+
+      Requirements for successfully calling this function:
+      - The `file_path` property MUST be provided and MUST be a relative path.
+      - The `text_contents` property MUST also be provided.
+      - The `text_contents` property MUST be the exact literal text to write to the file.
+
+      **Warning:** Failing to strictly follow any of the above requirements will result in tool
+      failure!
+
+      You must always use this tool whenever you want to write to a file.
+      """,
       parameters: %{
         type: "object",
         properties: %{
-          path: %{
+          file_path: %{
             type: "string",
             description: """
-            The path, relative to the current directory, to write the contents to
+            The path of the file, relative to the current directory, to write the contents to
             (e.g., lib/agt/my_module.ex).
 
             Parent directories will be created if they don't exist.
             """
           },
-          content: %{
+          text_contents: %{
             type: "string",
             description: """
-            The file contents (e.g. "defmodule MyModule do\nend").
+            The exact literal text that will be written to the file (e.g. "defmodule MyModule do\nend").
             """
           }
         },
-        required: ["path", "content"]
+        required: ["file_path", "text_contents"]
       }
     }
   end

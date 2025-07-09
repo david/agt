@@ -14,18 +14,31 @@ defmodule Agt.Tools.FileRead do
   def meta do
     %{
       name: name(),
-      description: "Read the content of a file given its path.",
+      description: """
+      Read the content of a file given its path.
+
+      Never read a file without first checking that it exists in the listing provided by
+      the `#{Agt.Tools.FileList.name()}` tool.
+
+      It is crucial that you follow the requirements below:
+      - ALWAYS include `file_path` as part of the function call.
+      - ALWAYS check that `file_path` exists.
+
+      If you need to read multiple files in one turn and you are not performing any destructive
+      operation in that same turn, you can get the list of files only once. There is no point in
+      listing files more than once in that case. It is a waste of time and tokens.
+      """,
       parameters: %{
         type: "object",
         properties: %{
-          path: %{
+          file_path: %{
             type: "string",
             description: """
             The path of the file to read (e.g., lib/agt/my_module.ex).
             """
           }
         },
-        required: ["path"]
+        required: ["file_path"]
       }
     }
   end
