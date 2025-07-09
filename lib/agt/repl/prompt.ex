@@ -20,12 +20,12 @@ defmodule Agt.REPL.Prompt do
   """
   def format(total_tokens, max_tokens, columns) do
     # Convert tokens to string for length calculation
-    total_tokens_str = Integer.to_string(total_tokens)
+    total_tokens_str = format_token_count(total_tokens)
 
     max_tokens_display =
       case max_tokens do
         :unknown -> "∞"
-        limit -> Integer.to_string(limit)
+        limit -> format_token_count(limit)
       end
 
     # Calculate the minimum length required for the token display part:
@@ -80,5 +80,33 @@ defmodule Agt.REPL.Prompt do
   """
   def format_end_prompt() do
     IO.ANSI.reset() <> Agt.ANSI.command_end()
+  end
+
+  # Private Helpers
+
+  @spec format_token_count(integer) :: String.t()
+  defp format_token_count(count) when count >= 999_500 do
+    format_unit(count, 1_000_000, "M")
+  end
+
+  defp format_token_count(count) when count >= 995 do
+    format_unit(count, 1_000, "K")
+  end
+
+  defp format_token_count(count) do
+    Integer.to_string(count)
+  end
+
+  @spec format_unit(integer, integer, String.t()) :: String.t()
+  defp format_unit(count, unit_size, suffix) do
+    # Calculate the value with one decimal place of precision.
+    value = Float.round(count / unit_size, 1)
+
+    # Check if the result is a whole number (e.g., 2.0).
+    if value == trunc(value) do
+      "#{trunc(value)}#{suffix}"
+    else
+      "#{value}#{suffix}"
+    end
   end
 end
