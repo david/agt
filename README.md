@@ -1,6 +1,13 @@
 # Agt
 
-**TODO: Add description**
+AGT (AI Agent Tool) is an AI coding assistant that runs in your terminal,
+written in Elixir. You talk to it at an interactive prompt, it sends the
+conversation to Google's Gemini API, and the model can act on your project
+through built-in tools: reading, writing, listing and deleting files, and
+running shell commands.
+
+Conversations are saved so they persist between sessions, the model's Markdown
+replies are rendered in the terminal, and the prompt shows token usage.
 
 ## Installation
 
